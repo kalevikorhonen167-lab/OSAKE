@@ -94,6 +94,7 @@
       font-size: 0.9rem;
     }
     input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    input:disabled, select:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .btn {
       padding: 8px 16px; border: none; border-radius: 6px;
@@ -147,7 +148,7 @@
         <span style="font-size:0.75rem; color:var(--text-muted);" id="login-password-hint">Syötä tilisi salasana.</span>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;"> Kirjaudu Pörssiin</button>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Kirjaudu Pörssiin</button>
     </form>
   </div>
 </div>
@@ -155,9 +156,11 @@
 <div class="container">
   <!-- YLÄPALKKI -->
   <div class="user-header-bar" id="user-header-bar">
-    <div>
-      <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
-      <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä & Sijoittaja)</span>
+    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+      <div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
+        <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä & Sijoittaja)</span>
+      </div>
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button class="btn btn-sm btn-secondary" onclick="openLoginModal()">Vaihda Tiliä</button>
@@ -182,7 +185,7 @@
       <div class="card">
         <h2> Pörssilista & Hinnat</h2>
         <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
-          Yhtiöltä ostaminen kasvattaa suoraan yrityksen kassaa. Ostaminen nostaa hintaa +0,20 % / osake.
+          Yhtiöltä ostaminen kasvattaa suoraan yrityksen kassaa. Ostaminen nostaa hintaa +0.20 % / osake.
         </p>
         <div id="stocks-market-list"></div>
       </div>
@@ -218,6 +221,9 @@
   <div id="tab-company-mgmt" class="tab-content" style="display: none;">
     <div class="card">
       <h2> Yritysten Tulot, Menot, Kuukausimaksut & Osingot</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
+        Vain yritys itse sekä Valtio voivat muokata yrityksen talousarvoja ja osinkoasetuksia.
+      </p>
       <div id="company-management-list"></div>
     </div>
   </div>
@@ -499,6 +505,10 @@ function renderStocksMarket() {
 
   state.companies.forEach(comp => {
     const price = calculateStockPrice(comp.id);
+    const history = state.historyStockPrices[comp.id] || [price];
+    const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+    const isUp = price >= prevPrice;
+
     const sData = state.stocksData[comp.id] || { sharesCount: 1000, useDividends: false };
     const netInc = calculateCompanyNetIncome(comp.id);
     const availableFromCompany = getAvailableShares(comp.id);
@@ -533,14 +543,15 @@ function renderStocksMarket() {
       <div class="stock-card">
         <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
           <strong style="color:#38bdf8; font-size:1.1rem;">${comp.name}</strong>
-          <span class="stats-badge">${price.toFixed(2)} € / osake</span>
+          <span class="stats-badge ${isUp ? '' : 'negative'}">${price.toFixed(2)} € / osake</span>
         </div>
         <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
           Kassa: ${Number(comp.balance).toFixed(2)} € | Kuukausitulos: ${netInc.toFixed(2)} €<br>
           Osakkeita vapaana yhtiöltä: <strong style="color: ${availableFromCompany > 0 ? 'var(--success)' : 'var(--danger)'};">${availableFromCompany} / ${sData.sharesCount} kpl</strong><br>
           Osinko: ${dividendText}
         </div>
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+
+        <div style="display:flex; gap:8px; align-items:center; margin-top:10px; margin-bottom:8px;">
           <input type="number" id="buy-qty-${comp.id}" min="1" value="1" style="width:90px;">
           <button class="btn btn-sm btn-success" onclick="buyStock('${comp.id}')">Osta yhtiöltä</button>
         </div>
@@ -585,7 +596,6 @@ window.buyFromListing = function(compId, listingIndex) {
   const listing = compListings[listingIndex];
   if (!listing) return;
 
-  // Estetään omien osakkeiden osto
   if (listing.sellerKey === userKey) {
     alert('Et voi ostaa omia myyntieräsi!');
     return;
@@ -696,11 +706,14 @@ function renderPortfolio() {
   listEl.innerHTML = stocksHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Ei osakeomistuksia.</p>';
 }
 
-/* YRITYSTEN TALOUS & ASETUKSET */
+/* YRITYSTEN TALOUS & ASETUKSET (VAIN VALTIO JA KYS. YRITYS VOIVAT MUOKATA) */
 function renderCompanyManagement() {
   const container = document.getElementById('company-management-list');
   if (!container) return;
   container.innerHTML = '';
+
+  const userKey = state.currentUserKey || 'state';
+  const isAdmin = (userKey === 'state');
 
   state.companies.forEach((comp, idx) => {
     if (!state.stocksData[comp.id]) {
@@ -710,9 +723,16 @@ function renderCompanyManagement() {
     const subTotal = getCompanySubscriptionsTotal(comp.id);
     const available = getAvailableShares(comp.id);
 
+    const isOwnerCompany = (userKey === 'comp_' + comp.id);
+    const canEdit = isAdmin || isOwnerCompany;
+    const disabledAttr = canEdit ? '' : 'disabled';
+
     container.innerHTML += `
       <div style="background:#111827; border:1px solid var(--card-border); padding:14px; border-radius:8px; margin-bottom:14px;">
-        <h3 style="color:#38bdf8; font-size:1rem; margin-bottom:10px;">${comp.name}</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 style="color:#38bdf8; font-size:1rem;">${comp.name}</h3>
+          ${!canEdit ? '<span style="font-size:0.75rem; color:var(--danger); background:rgba(239,68,68,0.1); padding:2px 8px; border-radius:4px;">🔒 Ei muokkausoikeutta</span>' : '<span style="font-size:0.75rem; color:var(--success); background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:4px;">✏️ Muokkausoikeus</span>'}
+        </div>
         <div style="background:#0f172a; padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--card-border);">
           <span style="color:var(--text-muted);">Kuukausimaksut yhteensä (saapuvat / lähtevät):</span>
           <strong style="color:${subTotal >= 0 ? 'var(--success)' : 'var(--danger)'};">${subTotal >= 0 ? '+' : ''}${subTotal.toFixed(2)} € / kk</strong>
@@ -723,30 +743,30 @@ function renderCompanyManagement() {
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
           <div class="form-group">
             <label>Manuaaliset Tulot (€/kk):</label>
-            <input type="number" value="${sData.manualIncome}" onchange="updateStockSetting('${comp.id}', 'manualIncome', this.value)">
+            <input type="number" value="${sData.manualIncome}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualIncome', this.value)">
           </div>
           <div class="form-group">
             <label>Manuaaliset Menot (€/kk):</label>
-            <input type="number" value="${sData.manualExpense}" onchange="updateStockSetting('${comp.id}', 'manualExpense', this.value)">
+            <input type="number" value="${sData.manualExpense}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualExpense', this.value)">
           </div>
           <div class="form-group">
             <label>Kokonaisosakemäärä (kpl):</label>
-            <input type="number" value="${sData.sharesCount}" min="1" onchange="updateStockSetting('${comp.id}', 'sharesCount', this.value)">
+            <input type="number" value="${sData.sharesCount}" min="1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'sharesCount', this.value)">
           </div>
           <div class="form-group">
             <label>Osinkotyyppi:</label>
-            <select onchange="updateStockSetting('${comp.id}', 'dividendType', this.value)">
+            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendType', this.value)">
               <option value="amount" ${sData.dividendType === 'amount' ? 'selected' : ''}>Kiinteä (€ / osake)</option>
               <option value="percent" ${sData.dividendType === 'percent' ? 'selected' : ''}>Prosentti (%) tuloksesta</option>
             </select>
           </div>
           <div class="form-group">
             <label>Osingon arvo / määrä:</label>
-            <input type="number" value="${sData.dividendValue}" step="0.1" onchange="updateStockSetting('${comp.id}', 'dividendValue', this.value)">
+            <input type="number" value="${sData.dividendValue}" step="0.1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendValue', this.value)">
           </div>
           <div class="form-group">
             <label>Osingonmaksu:</label>
-            <select onchange="updateStockSetting('${comp.id}', 'useDividends', this.value === 'true')">
+            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'useDividends', this.value === 'true')">
               <option value="true" ${sData.useDividends ? 'selected' : ''}>Käytössä</option>
               <option value="false" ${!sData.useDividends ? 'selected' : ''}>Ei käytössä</option>
             </select>
@@ -758,6 +778,16 @@ function renderCompanyManagement() {
 }
 
 window.updateStockSetting = function(compId, field, val) {
+  const userKey = state.currentUserKey || 'state';
+  const isAdmin = (userKey === 'state');
+  const isOwnerCompany = (userKey === 'comp_' + compId);
+
+  if (!isAdmin && !isOwnerCompany) {
+    alert('Vain kyseinen yritys tai Valtio voi muokata näitä tietoja!');
+    renderCompanyManagement();
+    return;
+  }
+
   if (!state.stocksData[compId]) state.stocksData[compId] = {};
   if (field === 'useDividends') {
     state.stocksData[compId][field] = (val === true);
@@ -774,7 +804,7 @@ window.updateStockSetting = function(compId, field, val) {
 /* VALTION ADMIN VAULT (Vain valtiolle/pääkäyttäjälle näkyvä salasanaosio) */
 function renderAdminVault() {
   const userKey = state.currentUserKey || 'state';
-  if (userKey !== 'state') return; // Varmistus: vain valtio näkee
+  if (userKey !== 'state') return;
 
   const citList = document.getElementById('admin-citizens-list');
   if (citList) {
