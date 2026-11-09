@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pörssi & Osakemarkkinat</title>
-  <!-- Chart.js CDN -->
+  <title>Yhteiskunta- & Taloussimulaattori</title>
+  <!-- Chart.js integrointi -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -31,22 +31,27 @@
     }
 
     .container { max-width: 1400px; margin: 0 auto; }
-
-    /* Login Modal */
+    
+    /* Login Modal Overlay */
     .login-modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(15, 23, 42, 0.95);
       backdrop-filter: blur(8px);
       z-index: 9999;
-      display: flex; justify-content: center; align-items: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       padding: 20px;
     }
+
     .login-box {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 12px;
       padding: 28px;
-      width: 100%; max-width: 440px;
+      width: 100%;
+      max-width: 440px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
 
@@ -57,13 +62,21 @@
       border-radius: 12px;
       padding: 14px 20px;
       margin-bottom: 20px;
-      display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; gap: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
     }
+
     .user-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: #0f172a; padding: 6px 14px;
-      border-radius: 20px; border: 1px solid var(--card-border);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
       font-weight: bold;
     }
 
@@ -72,6 +85,7 @@
     p.subtitle { color: var(--text-muted); font-size: 0.95rem; }
 
     .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px; }
 
     .card {
       background-color: var(--card-bg);
@@ -79,27 +93,35 @@
       border-radius: 12px;
       padding: 20px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-      margin-bottom: 20px;
     }
+
     .card h2 { font-size: 1.25rem; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
     input[type="text"], input[type="number"], input[type="password"], select, textarea {
-      width: 100%; padding: 8px 12px;
+      width: 100%;
+      padding: 8px 12px;
       background-color: #0f172a;
       border: 1px solid var(--card-border);
       border-radius: 6px;
       color: var(--text);
       font-size: 0.9rem;
     }
-    input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
-    input:disabled, select:disabled { opacity: 0.6; cursor: not-allowed; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 
     .btn {
-      padding: 8px 16px; border: none; border-radius: 6px;
-      font-weight: 600; cursor: pointer; font-size: 0.9rem;
-      transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
     .btn-primary { background-color: var(--primary); color: white; }
     .btn-primary:hover { background-color: var(--primary-hover); }
@@ -107,60 +129,84 @@
     .btn-danger { background-color: var(--danger); color: white; }
     .btn-warning { background-color: var(--warning); color: #000; }
     .btn-secondary { background-color: #475569; color: white; }
+    .btn-secondary:hover { background-color: #334155; }
     .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
 
     .stats-badge { font-size: 1.25rem; font-weight: bold; color: var(--success); }
     .stats-badge.negative { color: var(--danger); }
 
+    .party-tag {
+      display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; color: white;
+    }
+
     .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px; flex-wrap: wrap; }
     .tab-btn { background: none; border: none; color: var(--text-muted); padding: 8px 16px; cursor: pointer; font-weight: bold; border-radius: 6px; }
     .tab-btn.active { background-color: var(--card-bg); color: var(--primary); border: 1px solid var(--card-border); }
 
-    #loading-indicator {
-      position: fixed; top: 10px; right: 10px; background: var(--primary); color: white;
-      padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; z-index: 10000; display: none;
+    .controls-bar {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);
     }
 
-    .stock-card {
-      background: #111827; border: 1px solid var(--card-border); border-radius: 8px; padding: 16px; margin-bottom: 16px;
+    .citizens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .citizen-card {
+      background: #111827; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; position: relative;
     }
+    .citizen-card.leader-badge::before {
+      content: "PUOLUEJOHTAJA"; position: absolute; top: 6px; right: 6px; font-size: 0.65rem; background: var(--warning); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold;
+    }
+    .citizen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding-right: 90px; }
+
+    .switch-group { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .switch-group input { width: auto; }
+
+    .item-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+    .item-row input { flex: 1; }
+
+    #loading-indicator {
+      position: fixed; top: 10px; right: 10px; background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; z-index: 10000; display: none;
+    }
+
+    .gov-badge { background: #38bdf8; color: #000; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+    .pm-badge { background: #f59e0b; color: #000; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+
+    .loan-box { background: #0f172a; border: 1px solid var(--card-border); border-radius: 6px; padding: 8px; margin-top: 8px; }
+    .pending-badge { background: var(--warning); color: #000; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+    .notification-dot { width: 10px; height: 10px; background-color: var(--warning); border-radius: 50%; display: inline-block; margin-left: 4px; }
   </style>
 </head>
 <body>
 
-<div id="loading-indicator"> Tallennetaan tietoja...</div>
+<div id="loading-indicator"> Tallennetaan Firebaseen...</div>
 
-<!-- KIRJAUTUMISMODAALI -->
+<!-- LOGIN MODAL -->
 <div id="login-modal" class="login-modal-overlay">
   <div class="login-box">
-    <h2 style="color:#38bdf8; font-size:1.4rem; margin-bottom:6px; text-align:center;">Kirjaudu Pörssiin</h2>
-    <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; margin-bottom:20px;">Valitse tili ja syötä salasana.</p>
+    <h2 style="color:#38bdf8; font-size:1.4rem; margin-bottom:6px; text-align:center;">Kirjaudu Simulaattoriin</h2>
+    <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; margin-bottom:20px;">Valitse tili ja syötä salasana jatkaaksesi.</p>
     
     <form onsubmit="performLogin(event)">
       <div class="form-group">
-        <label>Valitse Tili / Käyttäjä:</label>
+        <label>Valitse Käyttäjä / Tili:</label>
         <select id="login-account-select" required onchange="onLoginAccountSelectChange(this.value)"></select>
       </div>
 
       <div class="form-group">
         <label>Salasana:</label>
-        <input type="password" id="login-password-input" required placeholder="Salasana">
+        <input type="password" id="login-password-input" required placeholder="Syötä salasana">
         <span style="font-size:0.75rem; color:var(--text-muted);" id="login-password-hint">Syötä tilisi salasana.</span>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Kirjaudu Pörssiin</button>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;"> Kirjaudu Sisään</button>
     </form>
   </div>
 </div>
 
 <div class="container">
-  <!-- YLÄPALKKI -->
+  <!-- USER HEADER BAR -->
   <div class="user-header-bar" id="user-header-bar">
-    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-      <div>
-        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
-        <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä & Sijoittaja)</span>
-      </div>
+    <div>
+      <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
+      <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä)</span>
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button class="btn btn-sm btn-secondary" onclick="openLoginModal()">Vaihda Tiliä</button>
@@ -168,80 +214,524 @@
   </div>
 
   <header>
-    <h1> Osakemarkkinat & Pörssi</h1>
-    <p class="subtitle">Osta ja myy osakkeita, seuraa arvon kehitystä viivakaaviosta ja hallitse yritysten taloutta</p>
+    <h1>Yhteiskunta- & Taloussimulaattori</h1>
+    <p class="subtitle">Henkilökohtaiset & Yrityksen tilit | Tuotteet & Kohderyhmät | Automaattinen Yritysvero</p>
   </header>
 
+  <div class="controls-bar" id="global-controls-bar">
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;" id="admin-global-actions">
+      <!-- Toiminnot näkyvät vain valtiolle -->
+    </div>
+    <div style="display: flex; gap: 16px; align-items: center; background: #0f172a; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+      <div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Nykyinen kuukausi:</span>
+        <strong id="current-month-display" style="color: #38bdf8; font-size: 1.1rem;">Kk 1</strong>
+      </div>
+      <div style="border-left: 1px solid var(--card-border); padding-left: 12px;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Työttömät (10 kpl):</span>
+        <strong id="unemployed-stats-display" style="color: var(--danger); font-size: 1.1rem;">0 kpl (0.0 %)</strong>
+      </div>
+    </div>
+  </div>
+
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('tab-stocks', this)"> Osakkeet & Kaupankäynti</button>
-    <button class="tab-btn" onclick="switchTab('tab-portfolio', this)"> Oma Salkku</button>
-    <button class="tab-btn" onclick="switchTab('tab-company-mgmt', this)"> Yritysten Talous & Asetukset</button>
-    <button class="tab-btn" onclick="switchTab('tab-admin-vault', this)" id="nav-tab-admin" style="display:none;"> Valtion Salasana- & Tilihallinta</button>
+    <button class="tab-btn active" onclick="switchTab('tab-user-dash', this)" id="btn-tab-user-dash"> Oma Tili & Vaalit</button>
+    <button class="tab-btn" onclick="switchTab('tab-products', this)"> Tuotteet & Palvelut</button>
+    <button class="tab-btn" onclick="switchTab('tab-laws', this)"> Lait</button>
+    <button class="tab-btn" onclick="switchTab('tab-questions', this)"> Kyselyt & Arvot</button>
+    <button class="tab-btn" onclick="switchTab('tab-parties', this)" id="nav-tab-parties"> Puolueet & Hallitus</button>
+    <button class="tab-btn" onclick="switchTab('tab-state', this)" id="nav-tab-state" style="display: none;"> Valtio & Budjetti</button>
+    <button class="tab-btn" onclick="switchTab('tab-citizens', this)" id="nav-tab-citizens" style="display: none;"> Kansalaiset (10)</button>
+    <button class="tab-btn" onclick="switchTab('tab-companies', this)"> Yritykset</button>
+    <button class="tab-btn" onclick="switchTab('tab-subscriptions', this)"> Kuukausimaksut</button>
+    <button class="tab-btn" onclick="switchTab('tab-loans', this)"> Lainat & Hyväksynnät <span id="loans-notification-dot"></span></button>
+    <button class="tab-btn" onclick="switchTab('tab-transfers', this)"> Rahansiirrot</button>
+    <button class="tab-btn" onclick="switchTab('tab-history', this)"> Talous & Politiikka</button>
   </div>
 
-  <!-- TAB 1: OSAKKEET JA KAUPANKÄYNTI -->
-  <div id="tab-stocks" class="tab-content">
+  <!-- TAB 0: OMA TILI JA VAALIT (KÄYTTÄJÄN NÄKYMÄ) -->
+  <div id="tab-user-dash" class="tab-content">
+    <!-- Uutiset linkkibanneri -->
+    <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-left: 4px solid #38bdf8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h3 style="color: #38bdf8; font-size: 1.1rem; margin-bottom: 4px;">📰 Ajankohtaiset Uutiset</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Pysy ajan tasalla valtakunnan tapahtumista ja uutisoinnista.</p>
+      </div>
+      <a href="https://kalevikorhonen167-lab.github.io/Uutiset/" target="_blank" class="btn btn-primary" style="text-decoration: none;">lue nallundain uutisia täältä ↗</a>
+    </div>
+
     <div class="grid-2">
-      <div class="card">
-        <h2> Pörssilista & Hinnat</h2>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
-          Yhtiöltä ostaminen kasvattaa suoraan yrityksen kassaa. Ostaminen nostaa hintaa +0.20 % / osake.
+      <div class="card" style="border-top: 4px solid var(--primary);">
+        <h2> Oman Tilin Tiedot</h2>
+        <div id="user-dash-account-details" style="margin-bottom: 16px;"></div>
+
+        <hr style="border-color: var(--card-border); margin: 16px 0;">
+
+        <h3> Valtion Kassa & Budjetti Yleiskatsaus</h3>
+        <div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border); margin-top: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Valtion Saldo:</span>
+            <strong id="dash-state-balance" style="color: var(--success);">0.00 €</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Työttömyystuki:</span>
+            <strong id="dash-state-benefit">800 € / kk</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-top: 4px solid var(--accent);">
+        <h2> Vaaliäänestys (Sijoita ehdokkaat paremmuusjärjestykseen)</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+          Valitse suosikkiehdokkaasi paremmuusjärjestykseen (1. saa 12 pistettä, 2. saa 10, 3. saa 8, 4. saa 7, 5. saa 6 jne.). Jokaista ehdokasta voi käyttää vain kerran per äänestys.
         </p>
-        <div id="stocks-market-list"></div>
-      </div>
+        <div id="user-voting-section"></div>
 
-      <div class="card">
-        <h2> Osakkeen Arvon Kehitys (Viivakaavio)</h2>
-        <div class="form-group">
-          <label>Valitse tarkasteltava yritys:</label>
-          <select id="chart-company-select" onchange="updateStockChart()"></select>
-        </div>
-        <div style="position: relative; height: 320px; width: 100%; margin-top: 12px;">
-          <canvas id="stockHistoryChart"></canvas>
-        </div>
+        <hr style="border-color: var(--card-border); margin: 16px 0;">
+
+        <h3> Puoluekannatus & Pisteet Yleiskatsaus</h3>
+        <div id="dash-party-stats-summary" style="margin-top: 10px;"></div>
       </div>
     </div>
   </div>
 
-  <!-- TAB 2: OMA SALKKU -->
-  <div id="tab-portfolio" class="tab-content" style="display: none;">
+  <!-- TAB: TUOTTEET & PALVELUT -->
+  <div id="tab-products" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <div class="card" id="create-product-card">
+        <h2> Lisää Uusi Tuote / Palvelu</h2>
+        <form onsubmit="createProduct(event)">
+          <div class="form-group">
+            <label>Tuotteen / Palvelun Nimi:</label>
+            <input type="text" id="prod-name" required placeholder="Esim. Ohjelmistolisenssi, Siivouspalvelu">
+          </div>
+          <div class="form-group">
+            <label>Hinta (€):</label>
+            <input type="number" id="prod-price" min="0.01" step="0.01" value="49.99" required>
+          </div>
+          <div class="form-group">
+            <label>Maksutapa:</label>
+            <select id="prod-type">
+              <option value="once">Kertamaksu</option>
+              <option value="sub">Kuukausitilaus (Veloitetaan joka kuukausi)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Kohderyhmät (Kenelle tuote on tarkoitettu):</label>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
+              <label style="font-size:0.85rem; color:var(--text); cursor:pointer;"><input type="checkbox" id="prod-target-cit" checked style="width:auto;"> Yksityishenkilöt</label>
+              <label style="font-size:0.85rem; color:var(--text); cursor:pointer;"><input type="checkbox" id="prod-target-comp" checked style="width:auto;"> Yritykset</label>
+              <label style="font-size:0.85rem; color:var(--text); cursor:pointer;"><input type="checkbox" id="prod-target-state" checked style="width:auto;"> Valtio</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Kuvaus:</label>
+            <textarea id="prod-desc" rows="2" placeholder="Lyhyt kuvaus tuotteesta..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-success" style="width: 100%;">+ Lisää Tuote Valikoimaan</button>
+        </form>
+      </div>
+
+      <div class="card" id="products-list-card">
+        <h2> Valikoimassa Olevat Tuotteet & Palvelut</h2>
+        <div id="products-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: LAIT -->
+  <div id="tab-laws" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <div class="card" id="create-law-card">
+        <h2> Säätä Uusi Laki / Muokkaa Lainsäädäntöä</h2>
+        <form onsubmit="createLaw(event)">
+          <div class="form-group">
+            <label>Lain Nimi:</label>
+            <input type="text" id="law-title" required placeholder="Esim. Ympäristönsuojelulaki §1">
+          </div>
+          <div class="form-group">
+            <label>Hyväksyjät / Säätäjät (Puolueet / Eduskunta / PM):</label>
+            <input type="text" id="law-passed-by" required placeholder="Esim. Hallitus (Kokoomus & SDP), Hyväksytty 8/10 äänellä">
+          </div>
+          <div class="form-group">
+            <label>Lakiteksti / Sisältö:</label>
+            <textarea id="law-body" rows="4" required placeholder="Kirjoita lain tarkat ehdot ja säännökset tähän..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">⚖️ Vahvista ja Säätä Laki</button>
+        </form>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;" id="laws-list-card">
+        <h2> Voimassa Olevat Lait & Säädökset</h2>
+        <div id="laws-list" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: KYSELYT & ARVOT -->
+  <div id="tab-questions" class="tab-content" style="display: none;">
     <div class="grid-2">
       <div class="card">
-        <h2> Salkkusi Yhteenveto</h2>
-        <div id="portfolio-summary" style="margin-bottom: 16px;"></div>
+        <h2> Luo Uusi Kysymys (Kaikki voivat lisätä)</h2>
+        <form onsubmit="createQuestion(event)">
+          <div class="form-group">
+            <label>Kysymys:</label>
+            <input type="text" id="q-title" required placeholder="Esim. Pitäisikö yritysveroa nostaa?">
+          </div>
+          <div class="form-group">
+            <label>Vaihtoehdot (pilkulla erotettuna):</label>
+            <input type="text" id="q-options" required placeholder="Kyllä, Ei, En osaa sanoa">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">+ Lisää Kysymys</button>
+        </form>
       </div>
+
       <div class="card">
-        <h2> Omistamasi Osakkeet</h2>
-        <div id="portfolio-stocks-list"></div>
+        <h2> Aktiiviset Kyselyt & Vastaukset</h2>
+        <div id="questions-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- TAB 3: YRITYSTEN TALOUS & ASETUKSET -->
-  <div id="tab-company-mgmt" class="tab-content" style="display: none;">
-    <div class="card">
-      <h2> Yritysten Tulot, Menot, Kuukausimaksut & Osingot</h2>
-      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
-        Vain yritys itse sekä Valtio voivat muokata yrityksen talousarvoja ja osinkoasetuksia.
-      </p>
-      <div id="company-management-list"></div>
+  <!-- TAB 1: VALTIO (VAIN VALTION PÄÄKÄYTTÄJÄLLE) -->
+  <div id="tab-state" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <div class="card">
+        <h2> Valtion Kassa & Verotus</h2>
+        <div style="margin-bottom: 16px;">
+          <span style="font-size: 0.9rem; color: var(--text-muted);">Valtion Saldo:</span>
+          <div class="stats-badge" id="state-balance">0.00 €</div>
+        </div>
+
+        <hr style="border-color: var(--card-border); margin: 16px 0;">
+
+        <h3> Ansiotuloverotus</h3>
+        <div class="form-group" style="margin-top: 10px;">
+          <label>Ansiotuloveron Malli:</label>
+          <select id="tax-system-mode" onchange="updateTaxMode(this.value)">
+            <option value="fixed">Kiinteä Ansiotulovero (%)</option>
+            <option value="progressive">Progressiivinen Ansiotulovero</option>
+          </select>
+        </div>
+
+        <div id="fixed-tax-section" class="form-group">
+          <label>Ansiotulovero (%):</label>
+          <input type="number" id="fixed-income-tax" value="15" min="0" max="100" onchange="updateFixedIncomeTax(this.value)">
+        </div>
+
+        <div id="progressive-tax-section" style="display: none;">
+          <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 8px;">Progressiiviset Ansiotuloveroportaat:</label>
+          <div id="tax-brackets-list"></div>
+          <button class="btn btn-sm btn-secondary" onclick="addTaxBracket()" style="margin-top: 8px;">+ Lisää Veroporras</button>
+        </div>
+
+        <hr style="border-color: var(--card-border); margin: 16px 0;">
+
+        <h3> Muut Kiinteät Verot</h3>
+        <div id="tax-types-list"></div>
+        <button class="btn btn-sm btn-secondary" onclick="addTaxType()" style="margin-top: 8px;">+ Lisää Muu Vero</button>
+
+        <hr style="border-color: var(--card-border); margin: 16px 0;">
+
+        <h3> Työttömyystuki (€/kk)</h3>
+        <div class="form-group">
+          <label>Työttömälle maksettava tuki (Valtiolta):</label>
+          <input type="number" id="unemployment-benefit" value="800" min="0" onchange="updateUnemploymentBenefit(this.value)">
+        </div>
+
+        <hr style="border-color: var(--card-border); margin: 16px 0;">
+
+        <h3> Yritysvero (Automaattinen veloitus tulosta)</h3>
+        <div class="switch-group">
+          <input type="checkbox" id="corp-tax-toggle" onchange="toggleCorpTax(this.checked)">
+          <label for="corp-tax-toggle">Yritysvero Käytössä</label>
+        </div>
+        <div class="form-group" id="corp-tax-rate-group">
+          <label>Yritysveroprosentti (%):</label>
+          <input type="number" id="corp-tax-rate" value="20" min="0" max="100" onchange="updateCorpTaxRate(this.value)">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2> Valtion Vuosibudjetti (Muokattava)</h2>
+        <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid var(--card-border); margin-bottom: 16px;">
+          <h3 style="color: var(--success); font-size: 0.95rem; margin-bottom: 8px;"> Automaattiset Tulot (12 kk)</h3>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+            <span>10 kansalaisen verot:</span>
+            <strong id="annual-citizen-taxes" style="color: var(--success);">0.00 €</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+            <span>Yritysverot kuukausitulojen pohjalta:</span>
+            <strong id="annual-corp-taxes" style="color: var(--success);">0.00 €</strong>
+          </div>
+
+          <hr style="border-color: var(--card-border); margin: 8px 0;">
+
+          <h3 style="color: var(--success); font-size: 0.85rem; margin-bottom: 6px;"> Muut Muokattavat Tuloerät (€ / kk)</h3>
+          <div id="state-income-items"></div>
+          <button class="btn btn-sm btn-secondary" onclick="addBudgetItem('income')" style="margin-top: 6px;">+ Lisää Tuloerä</button>
+        </div>
+
+        <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid var(--card-border); margin-bottom: 16px;">
+          <h3 style="color: var(--danger); font-size: 0.95rem; margin-bottom: 8px;"> Automaattiset Menot (12 kk)</h3>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+            <span>Valtion maksamat palkat:</span>
+            <strong id="annual-state-salaries" style="color: var(--danger);">0.00 €</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+            <span>Työttömyystuet:</span>
+            <strong id="annual-benefits" style="color: var(--danger);">0.00 €</strong>
+          </div>
+
+          <hr style="border-color: var(--card-border); margin: 8px 0;">
+
+          <h3 style="color: var(--danger); font-size: 0.85rem; margin-bottom: 6px;"> Muut Muokattavat Menoerät (€ / kk)</h3>
+          <div id="state-expense-items"></div>
+          <button class="btn btn-sm btn-secondary" onclick="addBudgetItem('expense')" style="margin-top: 6px;">+ Lisää Menoerä</button>
+        </div>
+
+        <div style="background: #111827; padding: 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+            <span>Kaikki Tulot Yhteensä (12 kk):</span>
+            <strong id="annual-total-income" style="color: var(--success);">0.00 €</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+            <span>Kaikki Menot Yhteensä (12 kk):</span>
+            <strong id="annual-total-expense" style="color: var(--danger);">0.00 €</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; margin-top: 8px;">
+            <span>Ennustettu Vuositulos:</span>
+            <span id="annual-net-balance" class="stats-badge">0.00 €</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- State Admin Password Vault -->
+      <div class="card" id="admin-company-passwords-card" style="grid-column: 1 / -1; border-top: 4px solid var(--danger);">
+        <h2> 🔐 Salasananhallinta (Vain Valtion Pääkäyttäjälle)</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Valtio näkee kaikkien käyttäjien ja yritysten salasanat ja voi vaihtaa niitä tarvittaessa.</p>
+        
+        <div style="background:#0f172a; padding:12px; border-radius:6px; border:1px solid var(--card-border); margin-bottom:16px;">
+          <h3 style="color:#38bdf8; font-size:0.95rem; margin-bottom:8px;">Valtion Oma Pääkäyttäjän Salasana</h3>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="text" id="state-admin-password-input" style="max-width:240px;">
+            <button class="btn btn-sm btn-primary" onclick="changeStateAdminPassword()">Päivitä Valtion Salasana</button>
+          </div>
+        </div>
+
+        <h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Kansalaisten Salasanat</h3>
+        <div id="citizen-passwords-vault-list" style="margin-bottom:16px;"></div>
+
+        <h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Yritysten Salasanat</h3>
+        <div id="company-passwords-vault-list"></div>
+      </div>
     </div>
   </div>
 
-  <!-- TAB 4: VALTION SALASANA- JA TILIHALLINTA -->
-  <div id="tab-admin-vault" class="tab-content" style="display: none;">
-    <div class="card" style="border-top: 4px solid var(--danger);">
-      <h2>🔐 Valtion Pääkäyttäjän Tilihallinta</h2>
-      <div id="admin-citizens-list" style="margin-bottom:16px;"></div>
-      <div id="admin-companies-list"></div>
+  <!-- TAB 2: KANSALAISET (10 KPL) -->
+  <div id="tab-citizens" class="tab-content" style="display: none;">
+    <div style="margin-bottom: 12px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid var(--card-border);">
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        Järjestelmässä on täsmälleen <strong>10 kansalaista</strong>. Voit asettaa heidät vaaliehdokkaiksi ja antaa vaaliohjelman tai kuvauksen.
+      </p>
+    </div>
+
+    <div class="citizens-grid" id="citizens-container"></div>
+  </div>
+
+  <!-- TAB 3: PUOLUEET & HALLITUS -->
+  <div id="tab-parties" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <!-- Hallituksen valintakortti: näkyy muokattavana valtiolle, tiedoksi muille -->
+      <div class="card" style="grid-column: 1 / -1; background: #0284c715; border: 1px solid #0284c7;" id="gov-selection-card">
+        <h2> Hallituskokoonpano & Pääministeri</h2>
+        <div id="gov-selection-container"></div>
+      </div>
+
+      <div class="card">
+        <h2> Puoluekannatus (Pisteet & %) & Vaalitulokset</h2>
+        <div id="party-stats-list"></div>
+      </div>
+
+      <div class="card">
+        <h2> Puolueet & Puheenjohtajat</h2>
+        <div id="party-editor-list"></div>
+        <button class="btn btn-primary" id="add-party-btn" onclick="addNewParty()" style="margin-top: 12px; display: none;">+ Lisää Uusi Puolue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: YRITYKSET -->
+  <div id="tab-companies" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <div class="card" id="admin-create-company-card">
+        <h2> Lisää Uusi Yritys (Vain Valtiolle)</h2>
+        <form onsubmit="createCompany(event)">
+          <div class="form-group">
+            <label>Yrityksen Nimi:</label>
+            <input type="text" id="comp-name" required placeholder="Esim. Suomen Teräs Oy">
+          </div>
+          <div class="form-group">
+            <label>Toimiala:</label>
+            <input type="text" id="comp-industry" required placeholder="Esim. Teollisuus">
+          </div>
+          <div class="form-group">
+            <label>Salasana (Vain Valtio näkee):</label>
+            <input type="password" id="comp-password" required placeholder="Aseta yrityksen salasana">
+          </div>
+          <div class="form-group">
+            <label>Alkusaldo (€):</label>
+            <input type="number" id="comp-balance" value="0.00" step="0.01" readonly style="background:#1e293b; color:var(--text-muted);">
+            <span style="font-size:0.75rem; color:var(--text-muted);">Uuden yrityksen alkusaldo on aina 0.00 €</span>
+          </div>
+          <button type="submit" class="btn btn-success">+ Luo Yritys</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2> Yritykset & Kassat</h2>
+        <div id="companies-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: LAINAT & HYVÄKSYNNÄT -->
+  <div id="tab-loans" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <div class="card">
+        <h2> Hae Lainaa (Vaatii Lainanantajan Hyväksynnän)</h2>
+        <form onsubmit="requestLoan(event)">
+          <div class="form-group">
+            <label>Lainanottaja:</label>
+            <select id="loan-borrower-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Lainanantaja (Keneltä haetaan):</label>
+            <select id="loan-lender-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Lainasumma (€):</label>
+            <input type="number" id="loan-amount-input" min="100" value="2000" step="50" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label>Korko (%):</label>
+              <input type="number" id="loan-interest-input" min="0" value="6" step="0.1" required>
+            </div>
+            <div class="form-group">
+              <label>Korkojakso:</label>
+              <select id="loan-period-select">
+                <option value="year">Vuosikorko (% / v)</option>
+                <option value="month">Kuukausikorko (% / kk)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Korkomalli:</label>
+            <select id="loan-type-select">
+              <option value="simple">Kiinteä korko</option>
+              <option value="compound">Korkoa korolle</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Kuukausittainen lyhennysprosentti (% / kk):</label>
+            <input type="number" id="loan-pay-pct-input" min="0.1" max="100" value="5" step="0.1" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;"> Lähetä Lainahakemus</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2> Odottavat Lainahakemukset & Aktiiviset Lainat</h2>
+        <div id="active-loans-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: KUUKAUSIMAKSUT -->
+  <div id="tab-subscriptions" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <div class="card" id="create-subscription-card">
+        <h2> Lisää Kuukausimaksu / Veloitussopimus</h2>
+        <form onsubmit="createSubscription(event)">
+          <div class="form-group">
+            <label>Maksun Nimi / Kuvaus:</label>
+            <input type="text" id="sub-name" placeholder="Esim. Vuokra, Lisenssi" required>
+          </div>
+          <div class="form-group">
+            <label>Maksaja (Lähde):</label>
+            <select id="sub-payer-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Saaja (Kohde):</label>
+            <select id="sub-receiver-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Kuukausisumma (€ / kk):</label>
+            <input type="number" id="sub-amount" min="0.01" value="150" step="0.01" required>
+          </div>
+          <button type="submit" class="btn btn-success" style="width: 100%;">+ Lisää Kuukausimaksu</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2> Aktiiviset Kuukausimaksut</h2>
+        <div id="subscriptions-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: RAHANSIIRROT -->
+  <div id="tab-transfers" class="tab-content" style="display: none;">
+    <div class="card" style="max-width: 600px; margin: 0 auto;">
+      <h2> Suorita Tilisiirto</h2>
+      <form onsubmit="executeTransfer(event)">
+        <div class="form-group">
+          <label>Maksaja (Lähde):</label>
+          <select id="transfer-from" required></select>
+        </div>
+        <div class="form-group">
+          <label>Saaja (Kohde):</label>
+          <select id="transfer-to" required></select>
+        </div>
+        <div class="form-group">
+          <label>Summa (€):</label>
+          <input type="number" id="transfer-amount" min="0.01" step="0.01" required placeholder="0.00">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;"> Tee Siirto</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TAB 7: TALOUS & POLITIIKKA -->
+  <div id="tab-history" class="tab-content" style="display: none;">
+    <div class="card" style="margin-bottom: 20px;">
+      <h2> Valtion Saldo & Työttömyys (Viivakaavio)</h2>
+      <div style="position: relative; height: 350px; width: 100%;">
+        <canvas id="historyChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2> Puoluekannatus Pisteinä Kuukausittain</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+        Seuraa puolueiden vaalipisteitä kuukausien varrella.
+      </p>
+      <div style="position: relative; height: 350px; width: 100%;">
+        <canvas id="partyHistoryChart"></canvas>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- FIREBASE & PÖRSSILOGIIKKA -->
+<!-- FIREBASE SDK & SOVELLUSLOGIIKKA -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCOenUQ2rrbM26yb6mDpOyHQv3sM35lw_k",
@@ -254,73 +744,144 @@
   };
 
   const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
   const db = getFirestore(app);
 
-  window.state = null;
-  window.stockChart = null;
+  const DEFAULT_PARTIES = [
+    { id: 'p1', name: 'Sosiaalidemokraatit', color: '#ef4444', leaderId: 1, desc: 'Vahva julkinen sektori, tasa-arvo ja sosiaaliturva.' },
+    { id: 'p2', name: 'Kansallinen Kokoomus', color: '#3b82f6', leaderId: 2, desc: 'Yrittäjyys, markkinatalous ja verojen alennukset.' },
+    { id: 'p3', name: 'Perussuomalaiset', color: '#f59e0b', leaderId: 3, desc: 'Kansalliset arvot ja julkisen talouden kurinalaisuus.' },
+    { id: 'p4', name: 'Keskusta', color: '#10b981', leaderId: 4, desc: 'Alueellinen tasapaino ja elinkeinoelämän vapaus.' },
+    { id: 'p5', name: 'Vihreä Liitto', color: '#84cc16', leaderId: 5, desc: 'Kestävä kehitys, koulutus ja vihreä siirtymä.' }
+  ];
 
-  window.initStockApp = async function() {
+  const DEFAULT_OCCUPATIONS = ['Insinööri', 'Opettaja', 'Sairaanhoitaja', 'Lääkäri', 'Koodari', 'Myyjä', 'Rakentaja', 'Kuljettaja', 'Yrittäjä', 'Opiskelija'];
+
+  function getInitialState() {
+    return {
+      currentMonth: 1,
+      stateBalance: 50000.00,
+      statePassword: 'admin123',
+      currentUserKey: 'state',
+      unemploymentBenefit: 800,
+      taxMode: 'progressive',
+      fixedIncomeTax: 15,
+      corpTaxActive: true,
+      corpTaxRate: 20,
+      government: ['p1', 'p2'],
+      primeMinisterId: 1,
+      loans: [],
+      subscriptions: [],
+      questions: [],
+      products: [],
+      laws: [
+        { id: 'law_1', title: 'Perustuslaki §1 - Kansalaisten oikeudet', passedBy: 'Perustuslaillinen eduskunta', body: 'Jokaisella kansalaisella on oikeus vapaaseen vaaliäänestykseen ja tasa-arvoiseen kohteluun yhteiskunnassa.' }
+      ],
+      votes: {},
+      history: [
+        { month: 1, balance: 50000, unemployedCount: 2, pmName: 'Kansalainen 1', partyPoints: { p1: 12, p2: 10, p3: 8, p4: 0, p5: 0 } }
+      ],
+      taxTypes: [
+        { id: 't2', name: 'Kunnallisvero', rate: 8 }
+      ],
+      taxBrackets: [
+        { min: 0, max: 1500, rate: 0 },
+        { min: 1501, max: 2500, rate: 10 },
+        { min: 2501, max: 3500, rate: 17 },
+        { min: 3501, max: 4800, rate: 24 },
+        { min: 4801, max: 6500, rate: 32 },
+        { min: 6501, max: 999999, rate: 40 }
+      ],
+      budgetItems: {
+        income: [{ id: 'bi1', name: 'Sakot ja muut tulot', amount: 300 }],
+        expense: [{ id: 'be1', name: 'Terveydenhuolto', amount: 2000 }, { id: 'be2', name: 'Koulutus', amount: 1500 }]
+      },
+      parties: JSON.parse(JSON.stringify(DEFAULT_PARTIES)),
+      citizens: [],
+      companies: [
+        { id: 'c1', name: 'Nokia Oyj', industry: 'Teknologia', password: 'nokia123', balance: 40000 },
+        { id: 'c2', name: 'Valmet Corp', industry: 'Teollisuus', password: 'valmet123', balance: 35000 }
+      ]
+    };
+  }
+
+  window.state = getInitialState();
+
+  window.initApp = async function() {
     showLoading(true);
     try {
       const docRef = doc(db, "simulator", "main_state");
-      
-      onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-          window.state = docSnap.data();
-          if (!window.state.portfolios) window.state.portfolios = {};
-          if (!window.state.stocksData) window.state.stocksData = {};
-          if (!window.state.historyStockPrices) window.state.historyStockPrices = {};
-          if (!window.state.stockPriceModifiers) window.state.stockPriceModifiers = {};
-          if (!window.state.marketListings) window.state.marketListings = [];
-          
-          window.state.companies.forEach(comp => {
-            if (!window.state.stocksData[comp.id]) {
-              window.state.stocksData[comp.id] = {
-                sharesCount: 1000,
-                manualIncome: 5000,
-                manualExpense: 3000,
-                dividendType: 'amount',
-                dividendValue: 2.00,
-                useDividends: true
-              };
-            }
-            if (window.state.stockPriceModifiers[comp.id] === undefined) {
-              window.state.stockPriceModifiers[comp.id] = 0;
-            }
-            if (!window.state.historyStockPrices[comp.id]) {
-              window.state.historyStockPrices[comp.id] = [calculateStockPrice(comp.id)];
-            }
-          });
-
-          if (window.renderAllStockApp) {
-            window.renderAllStockApp();
-          }
-        }
-      });
-
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+
+      if (docSnap.exists() && docSnap.data().citizens && docSnap.data().citizens.length === 10) {
         window.state = docSnap.data();
+        if (!window.state.loans) window.state.loans = [];
+        if (!window.state.subscriptions) window.state.subscriptions = [];
+        if (!window.state.questions) window.state.questions = [];
+        if (!window.state.products) window.state.products = [];
+        if (!window.state.laws) window.state.laws = [];
+        if (!window.state.votes) window.state.votes = {};
+        if (!window.state.statePassword) window.state.statePassword = 'admin123';
+        if (!window.state.currentUserKey) window.state.currentUserKey = 'state';
+        if (!window.state.history) window.state.history = [];
       } else {
-        alert('Simulaattorin päätietoja ei löydy Firebasesta!');
+        await generateFreshState();
       }
     } catch (e) {
       console.error("Firebase virhe:", e);
-      alert('Yhteysvirhe tietokantaan.');
+      await generateFreshState();
     } finally {
       showLoading(false);
+      ensurePartyLeaders();
       if (window.openLoginModal) window.openLoginModal();
-      if (window.renderAllStockApp) window.renderAllStockApp();
-      if (window.initStockChart) window.initStockChart();
+      if (window.renderAll) window.renderAll();
+      if (window.initCharts) window.initCharts();
     }
   };
 
-  window.saveStockState = async function() {
+  async function generateFreshState() {
+    window.state = getInitialState();
+    window.state.citizens = [];
+
+    for (let i = 1; i <= 10; i++) {
+      const occ = DEFAULT_OCCUPATIONS[i - 1] || 'Työntekijä';
+      const sal = Math.floor(Math.random() * 20 + 20) * 100;
+      const assignedParty = window.state.parties[(i - 1) % window.state.parties.length].id;
+      const isUnemp = i === 9 || i === 10;
+
+      window.state.citizens.push({
+        id: i,
+        name: `Kansalainen ${i}`,
+        occupation: occ,
+        salary: sal,
+        balance: 1500.00,
+        password: `salasana${i}`,
+        partyId: assignedParty,
+        isUnemployed: isUnemp,
+        employer: isUnemp ? 'state' : (i % 2 === 0 ? 'state' : 'comp_c1'),
+        isCandidate: true,
+        candidateDesc: `Kansalainen #${i}: Olen valmis rakentamaan parempaa yhteiskuntaa.`
+      });
+    }
+
+    ensurePartyLeaders();
+    await window.saveState();
+  }
+
+  function ensurePartyLeaders() {
+    window.state.parties.forEach((p, idx) => {
+      if (!p.leaderId) {
+        p.leaderId = window.state.citizens[idx] ? window.state.citizens[idx].id : 1;
+      }
+    });
+  }
+
+  window.saveState = async function() {
     showLoading(true);
     try {
       await setDoc(doc(db, "simulator", "main_state"), window.state);
     } catch (e) {
-      console.error("Virhe tallennettaessa:", e);
+      console.error("Virhe tallennettaessa Firebaseen:", e);
     } finally {
       showLoading(false);
     }
@@ -331,16 +892,63 @@
     if (el) el.style.display = show ? 'block' : 'none';
   }
 
-  window.initStockApp();
+  window.initApp();
 </script>
 
 <script>
+let historyChart = null;
+let partyHistoryChart = null;
+
+/* GLOBAALIT APUFUNKTIOT */
+function getEntityName(key) {
+  if (!key || typeof key !== 'string') return 'Valtio';
+  if (key === 'state') return 'Valtio';
+  if (key.startsWith('comp_')) {
+    const comp = (state.companies || []).find(x => 'comp_' + x.id === key);
+    return comp ? comp.name : 'Yritys';
+  }
+  if (key.startsWith('cit_')) {
+    const c = (state.citizens || []).find(x => 'cit_' + x.id === key);
+    return c ? c.name : 'Kansalainen';
+  }
+  return key;
+}
+
+function adjustBalance(key, amt) {
+  if (!key || typeof key !== 'string') key = 'state';
+  const num = Number(amt) || 0;
+  if (key === 'state') state.stateBalance += num;
+  else if (key.startsWith('comp_')) {
+    const comp = (state.companies || []).find(x => 'comp_' + x.id === key);
+    if (comp) comp.balance += num;
+  } else if (key.startsWith('cit_')) {
+    const c = (state.citizens || []).find(x => 'cit_' + x.id === key);
+    if (c) c.balance += num;
+  }
+}
+
+function adjustBalanceWithCorpTax(targetKey, grossAmount) {
+  if (!targetKey || typeof targetKey !== 'string') targetKey = 'state';
+  const num = Number(grossAmount) || 0;
+  if (num <= 0) return;
+
+  if (targetKey.startsWith('comp_') && state.corpTaxActive) {
+    const taxRate = Number(state.corpTaxRate) || 0;
+    const taxAmount = num * (taxRate / 100);
+    const netAmount = num - taxAmount;
+
+    state.stateBalance += taxAmount;
+    adjustBalance(targetKey, netAmount);
+  } else {
+    adjustBalance(targetKey, num);
+  }
+}
+
 window.openLoginModal = function() {
-  if (!window.state) return;
   const select = document.getElementById('login-account-select');
   if (!select) return;
-  let options = `<option value="state">Valtio (Pääkäyttäjä & Sijoittaja)</option><optgroup label="10 Kansalaista">`;
-  state.citizens.forEach(c => { options += `<option value="cit_${c.id}">Kansalainen #${c.id} - ${c.name}</option>`; });
+  let options = `<option value="state">Valtio (Pääkäyttäjä)</option><optgroup label="10 Kansalaista">`;
+  state.citizens.forEach(c => { options += `<option value="cit_${c.id}">Kansalainen #${c.id} - ${c.name} (${c.occupation})</option>`; });
   options += `</optgroup><optgroup label="Yritykset">`;
   state.companies.forEach(comp => { options += `<option value="comp_${comp.id}">Yritys: ${comp.name}</option>`; });
   options += `</optgroup>`;
@@ -354,8 +962,9 @@ window.openLoginModal = function() {
 function onLoginAccountSelectChange(val) {
   const hint = document.getElementById('login-password-hint');
   if (!hint) return;
-  if (val === 'state') hint.textContent = 'Valtion salasana';
-  else hint.textContent = 'Syötä tilisi salasana.';
+  if (val === 'state') hint.textContent = 'Valtion salasana (oletus: admin123)';
+  else if (val.startsWith('cit_')) hint.textContent = 'Syötä kansalaisen salasana.';
+  else if (val.startsWith('comp_')) hint.textContent = 'Syötä yrityksen salasana.';
 }
 
 window.performLogin = function(e) {
@@ -367,582 +976,3 @@ window.performLogin = function(e) {
   if (acc === 'state') {
     ok = (pass === (state.statePassword || 'admin123'));
   } else if (acc.startsWith('cit_')) {
-    const id = Number(acc.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
-    ok = (c && c.password === pass);
-  } else if (acc.startsWith('comp_')) {
-    const id = acc.replace('comp_', '');
-    const comp = state.companies.find(x => x.id === id);
-    ok = (comp && comp.password === pass);
-  }
-
-  if (ok) {
-    state.currentUserKey = acc;
-    window.saveStockState();
-    document.getElementById('login-modal').style.display = 'none';
-    document.getElementById('login-password-input').value = '';
-    window.renderAllStockApp();
-  } else {
-    alert('Virheellinen salasana!');
-  }
-}
-
-window.renderAllStockApp = function() {
-  if (!window.state) return;
-  updateUserDisplayBadge();
-  renderStocksMarket();
-  renderPortfolio();
-  renderCompanyManagement();
-  renderAdminVault();
-  updateChartDropdown();
-  if (window.stockChart) updateStockChart();
-}
-
-function updateUserDisplayBadge() {
-  const badge = document.getElementById('current-user-badge');
-  if (!badge) return;
-  const userKey = state.currentUserKey || 'state';
-  let txt = 'Valtio (Pääkäyttäjä)';
-
-  if (userKey === 'state') {
-    txt = 'Valtio (Pääkäyttäjä & Sijoittaja)';
-  } else if (userKey.startsWith('cit_')) {
-    const id = Number(userKey.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
-    if (c) txt = `Kansalainen #${c.id}: ${c.name}`;
-  } else if (userKey.startsWith('comp_')) {
-    const id = userKey.replace('comp_', '');
-    const comp = state.companies.find(x => x.id === id);
-    if (comp) txt = `Yritys: ${comp.name}`;
-  }
-  badge.textContent = txt;
-
-  const adminNav = document.getElementById('nav-tab-admin');
-  if (adminNav) {
-    const isAdmin = (userKey === 'state');
-    adminNav.style.display = isAdmin ? 'block' : 'none';
-  }
-}
-
-window.switchTab = function(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById(tabId).style.display = 'block';
-  if (btn) btn.classList.add('active');
-  if (tabId === 'tab-stocks' && window.stockChart) window.stockChart.update();
-}
-
-function getCompanyName(key) {
-  if (key === 'state') return 'Valtio';
-  if (key.startsWith('cit_')) {
-    const id = Number(key.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
-    return c ? `Kansalainen: ${c.name}` : key;
-  }
-  if (key.startsWith('comp_')) {
-    const id = key.replace('comp_', '');
-    const comp = state.companies.find(x => x.id === id);
-    return comp ? `Yritys: ${comp.name}` : key;
-  }
-  return key;
-}
-
-function getCompanySubscriptionsTotal(compId) {
-  let subTotal = 0;
-  if (state.subscriptions && Array.isArray(state.subscriptions)) {
-    state.subscriptions.forEach(sub => {
-      if (sub.receiver === 'comp_' + compId) subTotal += Number(sub.amount || 0);
-      if (sub.payer === 'comp_' + compId) subTotal -= Number(sub.amount || 0);
-    });
-  }
-  return subTotal;
-}
-
-function calculateCompanyNetIncome(compId) {
-  const sData = state.stocksData[compId] || { manualIncome: 0, manualExpense: 0 };
-  let manualNet = Number(sData.manualIncome || 0) - Number(sData.manualExpense || 0);
-  let subNet = getCompanySubscriptionsTotal(compId);
-  return manualNet + subNet;
-}
-
-function calculateStockPrice(compId) {
-  const comp = state.companies.find(x => x.id === compId);
-  const sData = state.stocksData[compId] || { sharesCount: 1000 };
-  if (!comp) return 10;
-
-  const cash = Number(comp.balance || 0);
-  const netIncome = calculateCompanyNetIncome(compId);
-  const shares = Math.max(1, Number(sData.sharesCount || 1000));
-
-  let basePrice = (cash + (netIncome * 12)) / shares;
-  
-  if (!state.stockPriceModifiers) state.stockPriceModifiers = {};
-  const modifier = state.stockPriceModifiers[compId] || 0; 
-  
-  let finalPrice = basePrice * (1 + (modifier / 100));
-  return Math.max(0.1, finalPrice);
-}
-
-function getAvailableShares(compId) {
-  const sData = state.stocksData[compId] || { sharesCount: 1000 };
-  const totalShares = Number(sData.sharesCount || 1000);
-  let ownedByOthers = 0;
-  if (state.portfolios) {
-    Object.values(state.portfolios).forEach(port => {
-      if (port && port[compId]) ownedByOthers += Number(port[compId] || 0);
-    });
-  }
-  return Math.max(0, totalShares - ownedByOthers);
-}
-
-/* PÖRSSILISTA JA KAUPANKÄYNTI */
-function renderStocksMarket() {
-  const container = document.getElementById('stocks-market-list');
-  if (!container) return;
-  container.innerHTML = '';
-
-  if (!state.marketListings) state.marketListings = [];
-
-  state.companies.forEach(comp => {
-    const price = calculateStockPrice(comp.id);
-    const history = state.historyStockPrices[comp.id] || [price];
-    const prevPrice = history.length > 1 ? history[history.length - 2] : price;
-    const isUp = price >= prevPrice;
-
-    const sData = state.stocksData[comp.id] || { sharesCount: 1000, useDividends: false };
-    const netInc = calculateCompanyNetIncome(comp.id);
-    const availableFromCompany = getAvailableShares(comp.id);
-
-    let dividendText = sData.useDividends ? (sData.dividendType === 'percent' ? `${sData.dividendValue}% tuloksesta` : `${sData.dividendValue} € / osake`) : 'Ei käytössä';
-
-    const compListings = state.marketListings.filter(l => l.compId === comp.id);
-    let listingsHtml = '';
-
-    if (compListings.length > 0) {
-      listingsHtml = `<div style="margin-top:10px; border-top:1px dashed var(--card-border); padding-top:8px;">
-        <span style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Käyttäjien myyntiin laittamat erät:</span>`;
-      
-      compListings.forEach((listing, index) => {
-        listingsHtml += `
-          <div style="background:#0f172a; padding:6px 10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border:1px solid var(--card-border);">
-            <div>
-              <strong>${getCompanyName(listing.sellerKey)}</strong><br>
-              <span style="color:var(--text-muted);">${listing.qty} kpl (Hinta: ${listing.price.toFixed(2)} €/kpl)</span>
-            </div>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <input type="number" id="buy-listing-qty-${comp.id}-${index}" min="1" max="${listing.qty}" value="${listing.qty}" style="width:60px; padding:2px 4px;">
-              <button class="btn btn-sm btn-success" onclick="buyFromListing('${comp.id}', ${index})">Osta</button>
-            </div>
-          </div>
-        `;
-      });
-      listingsHtml += `</div>`;
-    }
-
-    container.innerHTML += `
-      <div class="stock-card">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <strong style="color:#38bdf8; font-size:1.1rem;">${comp.name}</strong>
-          <span class="stats-badge ${isUp ? '' : 'negative'}">${price.toFixed(2)} € / osake</span>
-        </div>
-        <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
-          Kassa: ${Number(comp.balance).toFixed(2)} € | Kuukausitulos: ${netInc.toFixed(2)} €<br>
-          Osakkeita vapaana yhtiöltä: <strong style="color: ${availableFromCompany > 0 ? 'var(--success)' : 'var(--danger)'};">${availableFromCompany} / ${sData.sharesCount} kpl</strong><br>
-          Osinko: ${dividendText}
-        </div>
-
-        <div style="display:flex; gap:8px; align-items:center; margin-top:10px; margin-bottom:8px;">
-          <input type="number" id="buy-qty-${comp.id}" min="1" value="1" style="width:90px;">
-          <button class="btn btn-sm btn-success" onclick="buyStock('${comp.id}')">Osta yhtiöltä</button>
-        </div>
-        ${listingsHtml}
-      </div>
-    `;
-  });
-}
-
-window.buyStock = function(compId) {
-  const userKey = state.currentUserKey || 'state';
-  const qtyField = document.getElementById(`buy-qty-${compId}`);
-  const qty = qtyField ? Number(qtyField.value) || 0 : 0;
-  if (qty <= 0) return;
-
-  const available = getAvailableShares(compId);
-  if (qty > available) return;
-
-  const price = calculateStockPrice(compId);
-  const cost = price * qty;
-
-  const userBal = getEntityBalance(userKey);
-  if (userBal < cost) return;
-
-  adjustEntityBalance(userKey, -cost);
-  adjustEntityBalance('comp_' + compId, cost);
-  
-  if (!state.portfolios[userKey]) state.portfolios[userKey] = {};
-  state.portfolios[userKey][compId] = (state.portfolios[userKey][compId] || 0) + qty;
-
-  if (!state.stockPriceModifiers) state.stockPriceModifiers = {};
-  state.stockPriceModifiers[compId] = (state.stockPriceModifiers[compId] || 0) + (0.20 * qty);
-
-  recordStockHistory(compId);
-  window.saveStockState();
-  renderAllStockApp();
-}
-
-window.buyFromListing = function(compId, listingIndex) {
-  const userKey = state.currentUserKey || 'state';
-  const compListings = state.marketListings.filter(l => l.compId === compId);
-  const listing = compListings[listingIndex];
-  if (!listing) return;
-
-  if (listing.sellerKey === userKey) {
-    alert('Et voi ostaa omia myyntieräsi!');
-    return;
-  }
-
-  const qtyField = document.getElementById(`buy-listing-qty-${compId}-${listingIndex}`);
-  const qtyToBuy = qtyField ? Number(qtyField.value) || 0 : 0;
-  if (qtyToBuy <= 0 || qtyToBuy > listing.qty) {
-    return;
-  }
-
-  const cost = listing.price * qtyToBuy;
-  const buyerBal = getEntityBalance(userKey);
-  if (buyerBal < cost) {
-    return;
-  }
-
-  adjustEntityBalance(userKey, -cost);
-  adjustEntityBalance(listing.sellerKey, cost);
-
-  if (!state.portfolios[userKey]) state.portfolios[userKey] = {};
-  state.portfolios[userKey][compId] = (state.portfolios[userKey][compId] || 0) + qtyToBuy;
-
-  listing.qty -= qtyToBuy;
-  if (listing.qty <= 0) {
-    const realIdx = state.marketListings.indexOf(listing);
-    if (realIdx > -1) state.marketListings.splice(realIdx, 1);
-  }
-
-  window.saveStockState();
-  renderAllStockApp();
-}
-
-window.listStockForSale = function(compId) {
-  const userKey = state.currentUserKey || 'state';
-  const qtyField = document.getElementById(`sell-qty-${compId}`);
-  const qty = qtyField ? Number(qtyField.value) || 0 : 0;
-  if (qty <= 0) return;
-
-  const userPort = state.portfolios[userKey] || {};
-  const owned = userPort[compId] || 0;
-  if (owned < qty) {
-    return;
-  }
-
-  const price = calculateStockPrice(compId);
-
-  userPort[compId] -= qty;
-  if (userPort[compId] <= 0) delete userPort[compId];
-
-  if (!state.marketListings) state.marketListings = [];
-  state.marketListings.push({
-    compId: compId,
-    sellerKey: userKey,
-    qty: qty,
-    price: price
-  });
-
-  if (!state.stockPriceModifiers) state.stockPriceModifiers = {};
-  state.stockPriceModifiers[compId] = (state.stockPriceModifiers[compId] || 0) - (0.20 * qty);
-
-  recordStockHistory(compId);
-  window.saveStockState();
-  renderAllStockApp();
-}
-
-/* OMA SALKKU */
-function renderPortfolio() {
-  const userKey = state.currentUserKey || 'state';
-  const summaryEl = document.getElementById('portfolio-summary');
-  const listEl = document.getElementById('portfolio-stocks-list');
-  if (!summaryEl || !listEl) return;
-
-  const bal = getEntityBalance(userKey);
-  const userPort = state.portfolios[userKey] || {};
-
-  let totalStockVal = 0;
-  let stocksHtml = '';
-
-  Object.entries(userPort).forEach(([compId, qty]) => {
-    const comp = state.companies.find(x => x.id === compId);
-    if (!comp) return;
-    const price = calculateStockPrice(compId);
-    const val = price * qty;
-    totalStockVal += val;
-
-    stocksHtml += `
-      <div style="background:#0f172a; padding:10px; border-radius:6px; border:1px solid var(--card-border); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <strong>${comp.name}</strong> (${qty} kpl)<br>
-          <span style="font-size:0.8rem; color:var(--text-muted);">Kurssi: ${price.toFixed(2)} €</span>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <div class="stats-badge" style="font-size:1rem;">${val.toFixed(2)} €</div>
-          <input type="number" id="sell-qty-${compId}" min="1" max="${qty}" value="1" style="width:60px;">
-          <button class="btn btn-sm btn-danger" onclick="listStockForSale('${compId}')">Myy markkinoille</button>
-        </div>
-      </div>
-    `;
-  });
-
-  summaryEl.innerHTML = `
-    <div style="font-size:0.9rem; margin-bottom:6px;">Käteissaldo: <strong>${bal.toFixed(2)} €</strong></div>
-    <div style="font-size:0.9rem; margin-bottom:6px;">Osakkeiden arvo: <strong>${totalStockVal.toFixed(2)} €</strong></div>
-    <div style="font-size:1.1rem; font-weight:bold; color:#38bdf8; margin-top:10px;">Varallisuus yhteensä: ${(bal + totalStockVal).toFixed(2)} €</div>
-  `;
-
-  listEl.innerHTML = stocksHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Ei osakeomistuksia.</p>';
-}
-
-/* YRITYSTEN TALOUS & ASETUKSET (VAIN VALTIO JA KYS. YRITYS VOIVAT MUOKATA) */
-function renderCompanyManagement() {
-  const container = document.getElementById('company-management-list');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const userKey = state.currentUserKey || 'state';
-  const isAdmin = (userKey === 'state');
-
-  state.companies.forEach((comp, idx) => {
-    if (!state.stocksData[comp.id]) {
-      state.stocksData[comp.id] = { sharesCount: 1000, manualIncome: 5000, manualExpense: 3000, dividendType: 'amount', dividendValue: 2.00, useDividends: true };
-    }
-    const sData = state.stocksData[comp.id];
-    const subTotal = getCompanySubscriptionsTotal(comp.id);
-    const available = getAvailableShares(comp.id);
-
-    const isOwnerCompany = (userKey === 'comp_' + comp.id);
-    const canEdit = isAdmin || isOwnerCompany;
-    const disabledAttr = canEdit ? '' : 'disabled';
-
-    container.innerHTML += `
-      <div style="background:#111827; border:1px solid var(--card-border); padding:14px; border-radius:8px; margin-bottom:14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <h3 style="color:#38bdf8; font-size:1rem;">${comp.name}</h3>
-          ${!canEdit ? '<span style="font-size:0.75rem; color:var(--danger); background:rgba(239,68,68,0.1); padding:2px 8px; border-radius:4px;">🔒 Ei muokkausoikeutta</span>' : '<span style="font-size:0.75rem; color:var(--success); background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:4px;">✏️ Muokkausoikeus</span>'}
-        </div>
-        <div style="background:#0f172a; padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);">Kuukausimaksut yhteensä (saapuvat / lähtevät):</span>
-          <strong style="color:${subTotal >= 0 ? 'var(--success)' : 'var(--danger)'};">${subTotal >= 0 ? '+' : ''}${subTotal.toFixed(2)} € / kk</strong>
-        </div>
-        <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
-          Osakkeet vapaana markkinoilla: <strong style="color:#f8fafc;">${available} / ${sData.sharesCount} kpl</strong>
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
-          <div class="form-group">
-            <label>Manuaaliset Tulot (€/kk):</label>
-            <input type="number" value="${sData.manualIncome}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualIncome', this.value)">
-          </div>
-          <div class="form-group">
-            <label>Manuaaliset Menot (€/kk):</label>
-            <input type="number" value="${sData.manualExpense}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualExpense', this.value)">
-          </div>
-          <div class="form-group">
-            <label>Kokonaisosakemäärä (kpl):</label>
-            <input type="number" value="${sData.sharesCount}" min="1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'sharesCount', this.value)">
-          </div>
-          <div class="form-group">
-            <label>Osinkotyyppi:</label>
-            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendType', this.value)">
-              <option value="amount" ${sData.dividendType === 'amount' ? 'selected' : ''}>Kiinteä (€ / osake)</option>
-              <option value="percent" ${sData.dividendType === 'percent' ? 'selected' : ''}>Prosentti (%) tuloksesta</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Osingon arvo / määrä:</label>
-            <input type="number" value="${sData.dividendValue}" step="0.1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendValue', this.value)">
-          </div>
-          <div class="form-group">
-            <label>Osingonmaksu:</label>
-            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'useDividends', this.value === 'true')">
-              <option value="true" ${sData.useDividends ? 'selected' : ''}>Käytössä</option>
-              <option value="false" ${!sData.useDividends ? 'selected' : ''}>Ei käytössä</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    `;
-  });
-}
-
-window.updateStockSetting = function(compId, field, val) {
-  const userKey = state.currentUserKey || 'state';
-  const isAdmin = (userKey === 'state');
-  const isOwnerCompany = (userKey === 'comp_' + compId);
-
-  if (!isAdmin && !isOwnerCompany) {
-    alert('Vain kyseinen yritys tai Valtio voi muokata näitä tietoja!');
-    renderCompanyManagement();
-    return;
-  }
-
-  if (!state.stocksData[compId]) state.stocksData[compId] = {};
-  if (field === 'useDividends') {
-    state.stocksData[compId][field] = (val === true);
-  } else if (field === 'dividendType') {
-    state.stocksData[compId][field] = val;
-  } else {
-    state.stocksData[compId][field] = Number(val);
-  }
-  recordStockHistory(compId);
-  window.saveStockState();
-  renderAllStockApp();
-}
-
-/* VALTION ADMIN VAULT (Vain valtiolle/pääkäyttäjälle näkyvä salasanaosio) */
-function renderAdminVault() {
-  const userKey = state.currentUserKey || 'state';
-  if (userKey !== 'state') return;
-
-  const citList = document.getElementById('admin-citizens-list');
-  if (citList) {
-    citList.innerHTML = '<h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Kansalaisten Tilit</h3>';
-    state.citizens.forEach((c, idx) => {
-      citList.innerHTML += `
-        <div style="background:#0f172a; padding:8px; border-radius:6px; border:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.85rem;">
-          <div><strong>#${c.id} ${c.name}</strong></div>
-          <div><input type="text" value="${c.password || ''}" style="width:120px; padding:2px 6px;" onchange="updateCitizenPwd(${idx}, this.value)"></div>
-        </div>
-      `;
-    });
-  }
-
-  const compList = document.getElementById('admin-companies-list');
-  if (compList) {
-    compList.innerHTML = '<h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Yritysten Tilit</h3>';
-    state.companies.forEach((comp, idx) => {
-      compList.innerHTML += `
-        <div style="background:#0f172a; padding:8px; border-radius:6px; border:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.85rem;">
-          <div><strong>${comp.name}</strong></div>
-          <div><input type="text" value="${comp.password || ''}" style="width:120px; padding:2px 6px;" onchange="updateCompanyPwd(${idx}, this.value)"></div>
-        </div>
-      `;
-    });
-  }
-}
-
-window.updateCitizenPwd = function(idx, val) { state.citizens[idx].password = val.trim(); window.saveStockState(); }
-window.updateCompanyPwd = function(idx, val) { state.companies[idx].password = val.trim(); window.saveStockState(); }
-
-/* APUPULSSI SALDOILLE */
-function getEntityBalance(key) {
-  if (key === 'state') return state.stateBalance;
-  if (key.startsWith('comp_')) {
-    const compId = key.replace('comp_', '');
-    const comp = state.companies.find(x => String(x.id) === String(compId));
-    return comp ? comp.balance : 0;
-  }
-  if (key.startsWith('cit_')) {
-    const id = Number(key.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
-    return c ? c.balance : 0;
-  }
-  return 0;
-}
-
-function adjustEntityBalance(key, amt) {
-  const num = Number(amt) || 0;
-  if (key === 'state') {
-    state.stateBalance += num;
-  } else if (key.startsWith('comp_')) {
-    const compId = key.replace('comp_', '');
-    const comp = state.companies.find(x => String(x.id) === String(compId));
-    if (comp) comp.balance += num;
-  } else if (key.startsWith('cit_')) {
-    const id = Number(key.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
-    if (c) c.balance += num;
-  }
-}
-
-/* KAAVIOIDEN HALLINTA (ITSE KOODATTU VIIVAKAAVIO) */
-function updateChartDropdown() {
-  const sel = document.getElementById('chart-company-select');
-  if (!sel) return;
-  const currentVal = sel.value;
-  sel.innerHTML = state.companies.map(comp => `<option value="${comp.id}">${comp.name}</option>`).join('');
-  if (currentVal && state.companies.some(c => c.id === currentVal)) {
-    sel.value = currentVal;
-  }
-}
-
-window.initStockChart = function() {
-  const ctx = document.getElementById('stockHistoryChart');
-  if (!ctx) return;
-
-  window.stockChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['Alku'],
-      datasets: [{
-        label: 'Osakkeen arvo (€)',
-        data: [10],
-        borderColor: '#38bdf8',
-        backgroundColor: 'rgba(56, 189, 248, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-        y: { grid: { color: '#334155' }, ticks: { color: '#38bdf8' } }
-      }
-    }
-  });
-  updateStockChart();
-}
-
-function recordStockHistory(compId) {
-  if (!state.historyStockPrices) state.historyStockPrices = {};
-  if (!state.historyStockPrices[compId]) {
-    state.historyStockPrices[compId] = [calculateStockPrice(compId)];
-  }
-  
-  const currentPrice = calculateStockPrice(compId);
-  state.historyStockPrices[compId].push(currentPrice);
-
-  if (state.historyStockPrices[compId].length > 100) {
-    state.historyStockPrices[compId] = state.historyStockPrices[compId].slice(-100);
-  }
-}
-
-window.updateStockChart = function() {
-  if (!window.stockChart) return;
-  const sel = document.getElementById('chart-company-select');
-  if (!sel) return;
-  const compId = sel.value;
-  if (!compId) return;
-
-  if (!state.historyStockPrices) state.historyStockPrices = {};
-  if (!state.historyStockPrices[compId] || state.historyStockPrices[compId].length === 0) {
-    state.historyStockPrices[compId] = [calculateStockPrice(compId)];
-  }
-
-  const historyArr = state.historyStockPrices[compId];
-  const labels = historyArr.map((_, idx) => idx === 0 ? 'Alku' : `Päivitys ${idx}`);
-
-  window.stockChart.data.labels = labels;
-  window.stockChart.data.datasets[0].data = historyArr;
-  window.stockChart.data.datasets[0].label = `Osakkeen arvo (€) - ${state.companies.find(c => c.id === compId)?.name || ''}`;
-  window.stockChart.update();
-}
-</script>
-
-</body>
-</html>
