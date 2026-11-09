@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yhteiskunta- & Taloussimulaattori</title>
-  <!-- Chart.js integrointi -->
+  <title>Pörssi & Osakemarkkinat</title>
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -31,27 +31,22 @@
     }
 
     .container { max-width: 1400px; margin: 0 auto; }
-    
-    /* Login Modal Overlay */
+
+    /* Login Modal */
     .login-modal-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(15, 23, 42, 0.95);
       backdrop-filter: blur(8px);
       z-index: 9999;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: flex; justify-content: center; align-items: center;
       padding: 20px;
     }
-
     .login-box {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 12px;
       padding: 28px;
-      width: 100%;
-      max-width: 440px;
+      width: 100%; max-width: 440px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
 
@@ -62,21 +57,13 @@
       border-radius: 12px;
       padding: 14px 20px;
       margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
     }
-
     .user-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #0f172a;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1px solid var(--card-border);
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0f172a; padding: 6px 14px;
+      border-radius: 20px; border: 1px solid var(--card-border);
       font-weight: bold;
     }
 
@@ -85,7 +72,6 @@
     p.subtitle { color: var(--text-muted); font-size: 0.95rem; }
 
     .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 24px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px; }
 
     .card {
       background-color: var(--card-bg);
@@ -93,35 +79,27 @@
       border-radius: 12px;
       padding: 20px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px;
     }
-
     .card h2 { font-size: 1.25rem; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
     input[type="text"], input[type="number"], input[type="password"], select, textarea {
-      width: 100%;
-      padding: 8px 12px;
+      width: 100%; padding: 8px 12px;
       background-color: #0f172a;
       border: 1px solid var(--card-border);
       border-radius: 6px;
       color: var(--text);
       font-size: 0.9rem;
     }
-    input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    input:disabled, select:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      padding: 8px 16px; border: none; border-radius: 6px;
+      font-weight: 600; cursor: pointer; font-size: 0.9rem;
+      transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     }
     .btn-primary { background-color: var(--primary); color: white; }
     .btn-primary:hover { background-color: var(--primary-hover); }
@@ -129,7 +107,6 @@
     .btn-danger { background-color: var(--danger); color: white; }
     .btn-warning { background-color: var(--warning); color: #000; }
     .btn-secondary { background-color: #475569; color: white; }
-    .btn-secondary:hover { background-color: #334155; }
     .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
 
     .stats-badge { font-size: 1.25rem; font-weight: bold; color: var(--success); }
@@ -139,64 +116,51 @@
     .tab-btn { background: none; border: none; color: var(--text-muted); padding: 8px 16px; cursor: pointer; font-weight: bold; border-radius: 6px; }
     .tab-btn.active { background-color: var(--card-bg); color: var(--primary); border: 1px solid var(--card-border); }
 
-    .controls-bar {
-      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);
+    #loading-indicator {
+      position: fixed; top: 10px; right: 10px; background: var(--primary); color: white;
+      padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; z-index: 10000; display: none;
     }
-
-    .citizens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-    .citizen-card { background: #111827; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; }
 
     .stock-card {
-      background: #0f172a;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    #loading-indicator {
-      position: fixed; top: 10px; right: 10px; background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; z-index: 10000; display: none;
+      background: #111827; border: 1px solid var(--card-border); border-radius: 8px; padding: 16px; margin-bottom: 16px;
     }
   </style>
 </head>
 <body>
 
-<div id="loading-indicator"> Tallennetaan Firebaseen...</div>
+<div id="loading-indicator"> Tallennetaan tietoja...</div>
 
-<!-- LOGIN MODAL -->
+<!-- KIRJAUTUMISMODAALI -->
 <div id="login-modal" class="login-modal-overlay">
   <div class="login-box">
-    <h2 style="color:#38bdf8; font-size:1.4rem; margin-bottom:6px; text-align:center;">Kirjaudu Simulaattoriin</h2>
-    <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; margin-bottom:20px;">Valitse tili ja syötä salasana jatkaaksesi.</p>
+    <h2 style="color:#38bdf8; font-size:1.4rem; margin-bottom:6px; text-align:center;">Kirjaudu Pörssiin</h2>
+    <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; margin-bottom:20px;">Valitse tili ja syötä salasana.</p>
     
     <form onsubmit="performLogin(event)">
       <div class="form-group">
-        <label>Valitse Käyttäjä / Tili:</label>
+        <label>Valitse Tili / Käyttäjä:</label>
         <select id="login-account-select" required onchange="onLoginAccountSelectChange(this.value)"></select>
       </div>
 
       <div class="form-group">
         <label>Salasana:</label>
-        <input type="password" id="login-password-input" required placeholder="Syötä salasana">
+        <input type="password" id="login-password-input" required placeholder="Salasana">
         <span style="font-size:0.75rem; color:var(--text-muted);" id="login-password-hint">Syötä tilisi salasana.</span>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;"> Kirjaudu Sisään</button>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Kirjaudu Pörssiin</button>
     </form>
   </div>
 </div>
 
 <div class="container">
-  <!-- USER HEADER BAR -->
+  <!-- YLÄPALKKI -->
   <div class="user-header-bar" id="user-header-bar">
-    <div>
-      <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
-      <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä)</span>
+    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+      <div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
+        <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä & Sijoittaja)</span>
+      </div>
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button class="btn btn-sm btn-secondary" onclick="openLoginModal()">Vaihda Tiliä</button>
@@ -204,168 +168,80 @@
   </div>
 
   <header>
-    <h1>Yhteiskunta- & Taloussimulaattori</h1>
-    <p class="subtitle">Henkilökohtaiset & Yrityksen tilit | Tuotteet & Osakekauppa | Firebase integrointi</p>
+    <h1> Osakemarkkinat & Pörssi</h1>
+    <p class="subtitle">Osta ja myy osakkeita, seuraa arvon kehitystä viivakaaviosta ja hallitse yritysten taloutta</p>
   </header>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('tab-user-dash', this)" id="btn-tab-user-dash"> Oma Tili & Salkku</button>
-    <button class="tab-btn" onclick="switchTab('tab-stocks', this)"> 📈 Osakekauppa (Pörssi)</button>
-    <button class="tab-btn" onclick="switchTab('tab-products', this)"> Tuotteet & Palvelut</button>
-    <button class="tab-btn" onclick="switchTab('tab-laws', this)"> Lait</button>
-    <button class="tab-btn" onclick="switchTab('tab-parties', this)" id="nav-tab-parties"> Puolueet & Hallitus</button>
-    <button class="tab-btn" onclick="switchTab('tab-state', this)" id="nav-tab-state" style="display: none;"> Valtio & Budjetti</button>
-    <button class="tab-btn" onclick="switchTab('tab-citizens', this)" id="nav-tab-citizens" style="display: none;"> Kansalaiset (10)</button>
-    <button class="tab-btn" onclick="switchTab('tab-companies', this)"> Yritykset</button>
-    <button class="tab-btn" onclick="switchTab('tab-subscriptions', this)"> Kuukausimaksut</button>
-    <button class="tab-btn" onclick="switchTab('tab-loans', this)"> Lainat & Hyväksynnät</button>
-    <button class="tab-btn" onclick="switchTab('tab-transfers', this)"> Rahansiirrot</button>
+    <button class="tab-btn active" onclick="switchTab('tab-stocks', this)"> Osakkeet & Kaupankäynti</button>
+    <button class="tab-btn" onclick="switchTab('tab-portfolio', this)"> Oma Salkku</button>
+    <button class="tab-btn" onclick="switchTab('tab-company-mgmt', this)"> Yritysten Talous & Asetukset</button>
+    <button class="tab-btn" onclick="switchTab('tab-admin-vault', this)" id="nav-tab-admin" style="display:none;"> Valtion Salasana- & Tilihallinta</button>
   </div>
 
-  <!-- TAB 0: OMA TILI JA SALKKU -->
-  <div id="tab-user-dash" class="tab-content">
+  <!-- TAB 1: OSAKKEET JA KAUPANKÄYNTI -->
+  <div id="tab-stocks" class="tab-content">
     <div class="grid-2">
-      <div class="card" style="border-top: 4px solid var(--primary);">
-        <h2> Oman Tilin Tiedot</h2>
-        <div id="user-dash-account-details" style="margin-bottom: 16px;"></div>
-
-        <hr style="border-color: var(--card-border); margin: 16px 0;">
-
-        <h3> Valtion Kassa Yleiskatsaus</h3>
-        <div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border); margin-top: 8px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="color: var(--text-muted);">Valtion Saldo:</span>
-            <strong id="dash-state-balance" style="color: var(--success);">0.00 €</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="border-top: 4px solid var(--accent);">
-        <h2> 📊 Omistamani Osakkeet (Salkku)</h2>
-        <div id="user-portfolio-details"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: OSAKEKAUPPA / PÖRSSI -->
-  <div id="tab-stocks" class="tab-content" style="display: none;">
-    <div class="card">
-      <h2> 📈 Pörssi & Osakekauppa</h2>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-        Osta ja myy yritysten osakkeita reaaliajassa. Kaupat veloitetaan suoraan valitun tilin kassasta.
-      </p>
-
-      <div id="stocks-market-list"></div>
-    </div>
-  </div>
-
-  <!-- TAB: TUOTTEET & PALVELUT -->
-  <div id="tab-products" class="tab-content" style="display: none;">
-    <div class="grid-2">
-      <div class="card" id="create-product-card">
-        <h2> Lisää Uusi Tuote / Palvelu</h2>
-        <form onsubmit="createProduct(event)">
-          <div class="form-group">
-            <label>Tuotteen Nimi:</label>
-            <input type="text" id="prod-name" required placeholder="Esim. Tuotelisenssi">
-          </div>
-          <div class="form-group">
-            <label>Hinta (€):</label>
-            <input type="number" id="prod-price" min="0.01" step="0.01" value="49.99" required>
-          </div>
-          <button type="submit" class="btn btn-success" style="width: 100%;">+ Lisää Tuote</button>
-        </form>
+      <div class="card">
+        <h2> Pörssilista & Hinnat</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+          Yhtiöltä ostaminen kasvattaa suoraan yrityksen kassaa. Ostaminen nostaa hintaa +0.20 % / osake.
+        </p>
+        <div id="stocks-market-list"></div>
       </div>
 
       <div class="card">
-        <h2> Tuotteet</h2>
-        <div id="products-list"></div>
+        <h2> Osakkeen Arvon Kehitys (Viivakaavio)</h2>
+        <div class="form-group">
+          <label>Valitse tarkasteltava yritys:</label>
+          <select id="chart-company-select" onchange="updateStockChart()"></select>
+        </div>
+        <div style="position: relative; height: 320px; width: 100%; margin-top: 12px;">
+          <canvas id="stockHistoryChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- TAB: LAIT -->
-  <div id="tab-laws" class="tab-content" style="display: none;">
+  <!-- TAB 2: OMA SALKKU -->
+  <div id="tab-portfolio" class="tab-content" style="display: none;">
+    <div class="grid-2">
+      <div class="card">
+        <h2> Salkkusi Yhteenveto</h2>
+        <div id="portfolio-summary" style="margin-bottom: 16px;"></div>
+      </div>
+      <div class="card">
+        <h2> Omistamasi Osakkeet</h2>
+        <div id="portfolio-stocks-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: YRITYSTEN TALOUS & ASETUKSET -->
+  <div id="tab-company-mgmt" class="tab-content" style="display: none;">
     <div class="card">
-      <h2> Voimassa Olevat Lait</h2>
-      <div id="laws-list"></div>
+      <h2> Yritysten Tulot, Menot, Kuukausimaksut & Osingot</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
+        Vain yritys itse sekä Valtio voivat muokata yrityksen talousarvoja ja osinkoasetuksia.
+      </p>
+      <div id="company-management-list"></div>
     </div>
   </div>
 
-  <!-- TAB: PUOLUEET -->
-  <div id="tab-parties" class="tab-content" style="display: none;">
-    <div class="card">
-      <h2> Puolueet</h2>
-      <div id="party-stats-list"></div>
+  <!-- TAB 4: VALTION SALASANA- JA TILIHALLINTA -->
+  <div id="tab-admin-vault" class="tab-content" style="display: none;">
+    <div class="card" style="border-top: 4px solid var(--danger);">
+      <h2>🔐 Valtion Pääkäyttäjän Tilihallinta</h2>
+      <div id="admin-citizens-list" style="margin-bottom:16px;"></div>
+      <div id="admin-companies-list"></div>
     </div>
   </div>
-
-  <!-- TAB: VALTIO -->
-  <div id="tab-state" class="tab-content" style="display: none;">
-    <div class="card">
-      <h2> Valtion Saldo</h2>
-      <div class="stats-badge" id="state-balance">0.00 €</div>
-    </div>
-  </div>
-
-  <!-- TAB: KANSALAISET -->
-  <div id="tab-citizens" class="tab-content" style="display: none;">
-    <div class="citizens-grid" id="citizens-container"></div>
-  </div>
-
-  <!-- TAB: YRITYKSET -->
-  <div id="tab-companies" class="tab-content" style="display: none;">
-    <div class="card">
-      <h2> Yritykset</h2>
-      <div id="companies-list"></div>
-    </div>
-  </div>
-
-  <!-- TAB: LAINAT -->
-  <div id="tab-loans" class="tab-content" style="display: none;">
-    <div class="card">
-      <h2> Lainat</h2>
-      <div id="active-loans-list"></div>
-    </div>
-  </div>
-
-  <!-- TAB: KUUKAUSIMAKSUT -->
-  <div id="tab-subscriptions" class="tab-content" style="display: none;">
-    <div class="card">
-      <h2> Kuukausimaksut</h2>
-      <div id="subscriptions-list"></div>
-    </div>
-  </div>
-
-  <!-- TAB: RAHANSIIRROT -->
-  <div id="tab-transfers" class="tab-content" style="display: none;">
-    <div class="card" style="max-width: 600px; margin: 0 auto;">
-      <h2> Suorita Tilisiirto</h2>
-      <form onsubmit="executeTransfer(event)">
-        <div class="form-group">
-          <label>Maksaja:</label>
-          <select id="transfer-from" required></select>
-        </div>
-        <div class="form-group">
-          <label>Saaja:</label>
-          <select id="transfer-to" required></select>
-        </div>
-        <div class="form-group">
-          <label>Summa (€):</label>
-          <input type="number" id="transfer-amount" min="0.01" step="0.01" required>
-        </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;"> Tee Siirto</button>
-      </form>
-    </div>
-  </div>
-
 </div>
 
-<!-- FIREBASE SDK & SOVELLUSLOGIIKKA -->
+<!-- FIREBASE & PÖRSSILOGIIKKA -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCOenUQ2rrbM26yb6mDpOyHQv3sM35lw_k",
@@ -378,79 +254,73 @@
   };
 
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
   const db = getFirestore(app);
 
-  function getInitialState() {
-    return {
-      currentMonth: 1,
-      stateBalance: 50000.00,
-      statePassword: 'admin123',
-      currentUserKey: 'state',
-      loans: [],
-      subscriptions: [],
-      products: [],
-      laws: [],
-      parties: [
-        { id: 'p1', name: 'Sosiaalidemokraatit', color: '#ef4444' },
-        { id: 'p2', name: 'Kansallinen Kokoomus', color: '#3b82f6' }
-      ],
-      citizens: [],
-      companies: [
-        { id: 'c1', name: 'Nokia Oyj', industry: 'Teknologia', password: 'nokia123', balance: 40000, pricePerShare: 25.50, totalShares: 1000 },
-        { id: 'c2', name: 'Valmet Corp', industry: 'Teollisuus', password: 'valmet123', balance: 35000, pricePerShare: 18.20, totalShares: 1000 }
-      ],
-      portfolios: {} // Käyttäjien osakesalkut { userKey: { companyId: count } }
-    };
-  }
+  window.state = null;
+  window.stockChart = null;
 
-  window.state = getInitialState();
-
-  window.initApp = async function() {
+  window.initStockApp = async function() {
     showLoading(true);
     try {
       const docRef = doc(db, "simulator", "main_state");
-      const docSnap = await getDoc(docRef);
+      
+      onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          window.state = docSnap.data();
+          if (!window.state.portfolios) window.state.portfolios = {};
+          if (!window.state.stocksData) window.state.stocksData = {};
+          if (!window.state.historyStockPrices) window.state.historyStockPrices = {};
+          if (!window.state.stockPriceModifiers) window.state.stockPriceModifiers = {};
+          if (!window.state.marketListings) window.state.marketListings = [];
+          
+          window.state.companies.forEach(comp => {
+            if (!window.state.stocksData[comp.id]) {
+              window.state.stocksData[comp.id] = {
+                sharesCount: 1000,
+                manualIncome: 5000,
+                manualExpense: 3000,
+                dividendType: 'amount',
+                dividendValue: 2.00,
+                useDividends: true
+              };
+            }
+            if (window.state.stockPriceModifiers[comp.id] === undefined) {
+              window.state.stockPriceModifiers[comp.id] = 0;
+            }
+            if (!window.state.historyStockPrices[comp.id]) {
+              window.state.historyStockPrices[comp.id] = [calculateStockPrice(comp.id)];
+            }
+          });
 
+          if (window.renderAllStockApp) {
+            window.renderAllStockApp();
+          }
+        }
+      });
+
+      const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         window.state = docSnap.data();
-        if (!window.state.portfolios) window.state.portfolios = {};
-        if (!window.state.companies) window.state.companies = getInitialState().companies;
       } else {
-        await generateFreshState();
+        alert('Simulaattorin päätietoja ei löydy Firebasesta!');
       }
     } catch (e) {
       console.error("Firebase virhe:", e);
-      await generateFreshState();
+      alert('Yhteysvirhe tietokantaan.');
     } finally {
       showLoading(false);
       if (window.openLoginModal) window.openLoginModal();
-      if (window.renderAll) window.renderAll();
+      if (window.renderAllStockApp) window.renderAllStockApp();
+      if (window.initStockChart) window.initStockChart();
     }
   };
 
-  async function generateFreshState() {
-    window.state = getInitialState();
-    window.state.citizens = [];
-
-    for (let i = 1; i <= 10; i++) {
-      window.state.citizens.push({
-        id: i,
-        name: `Kansalainen ${i}`,
-        occupation: 'Työntekijä',
-        balance: 1500.00,
-        password: `salasana${i}`
-      });
-    }
-    await window.saveState();
-  }
-
-  window.saveState = async function() {
+  window.saveStockState = async function() {
     showLoading(true);
     try {
       await setDoc(doc(db, "simulator", "main_state"), window.state);
     } catch (e) {
-      console.error("Virhe tallennettaessa Firebaseen:", e);
+      console.error("Virhe tallennettaessa:", e);
     } finally {
       showLoading(false);
     }
@@ -461,69 +331,31 @@
     if (el) el.style.display = show ? 'block' : 'none';
   }
 
-  window.initApp();
+  window.initStockApp();
 </script>
 
 <script>
-function getEntityName(key) {
-  if (!key || typeof key !== 'string') return 'Valtio';
-  if (key === 'state') return 'Valtio';
-  if (key.startsWith('comp_')) {
-    const comp = (state.companies || []).find(x => 'comp_' + x.id === key);
-    return comp ? comp.name : 'Yritys';
-  }
-  if (key.startsWith('cit_')) {
-    const c = (state.citizens || []).find(x => 'cit_' + x.id === key);
-    return c ? c.name : 'Kansalainen';
-  }
-  return key;
-}
-
-function getBalance(key) {
-  if (key === 'state') return state.stateBalance;
-  if (key.startsWith('comp_')) {
-    const comp = state.companies.find(x => 'comp_' + x.id === key);
-    return comp ? comp.balance : 0;
-  }
-  if (key.startsWith('cit_')) {
-    const c = state.citizens.find(x => 'cit_' + x.id === key);
-    return c ? c.balance : 0;
-  }
-  return 0;
-}
-
-function updateBalance(key, amount) {
-  if (key === 'state') state.stateBalance += amount;
-  else if (key.startsWith('comp_')) {
-    const comp = state.companies.find(x => 'comp_' + x.id === key);
-    if (comp) comp.balance += amount;
-  } else if (key.startsWith('cit_')) {
-    const c = state.citizens.find(x => 'cit_' + x.id === key);
-    if (c) c.balance += amount;
-  }
-}
-
 window.openLoginModal = function() {
+  if (!window.state) return;
   const select = document.getElementById('login-account-select');
   if (!select) return;
-  let options = `<option value="state">Valtio (Pääkäyttäjä)</option><optgroup label="10 Kansalaista">`;
-  (state.citizens || []).forEach(c => { options += `<option value="cit_${c.id}">${c.name}</option>`; });
+  let options = `<option value="state">Valtio (Pääkäyttäjä & Sijoittaja)</option><optgroup label="10 Kansalaista">`;
+  state.citizens.forEach(c => { options += `<option value="cit_${c.id}">Kansalainen #${c.id} - ${c.name}</option>`; });
   options += `</optgroup><optgroup label="Yritykset">`;
-  (state.companies || []).forEach(comp => { options += `<option value="comp_${comp.id}">${comp.name}</option>`; });
+  state.companies.forEach(comp => { options += `<option value="comp_${comp.id}">Yritys: ${comp.name}</option>`; });
   options += `</optgroup>`;
   select.innerHTML = options;
   onLoginAccountSelectChange(select.value);
 
   const modal = document.getElementById('login-modal');
   if (modal) modal.style.display = 'flex';
-};
+}
 
 function onLoginAccountSelectChange(val) {
   const hint = document.getElementById('login-password-hint');
   if (!hint) return;
-  if (val === 'state') hint.textContent = 'Valtion salasana (admin123)';
-  else if (val.startsWith('cit_')) hint.textContent = 'Syötä kansalaisen salasana (esim. salasana1).';
-  else if (val.startsWith('comp_')) hint.textContent = 'Syötä yrityksen salasana (esim. nokia123).';
+  if (val === 'state') hint.textContent = 'Valtion salasana';
+  else hint.textContent = 'Syötä tilisi salasana.';
 }
 
 window.performLogin = function(e) {
@@ -532,223 +364,585 @@ window.performLogin = function(e) {
   const pass = document.getElementById('login-password-input').value;
   let ok = false;
 
-  if (acc === 'state') ok = (pass === (state.statePassword || 'admin123'));
-  else if (acc.startsWith('cit_')) {
-    const id = parseInt(acc.replace('cit_', ''));
-    const c = (state.citizens || []).find(x => x.id === id);
-    if (c && c.password === pass) ok = true;
+  if (acc === 'state') {
+    ok = (pass === (state.statePassword || 'admin123'));
+  } else if (acc.startsWith('cit_')) {
+    const id = Number(acc.replace('cit_', ''));
+    const c = state.citizens.find(x => x.id === id);
+    ok = (c && c.password === pass);
   } else if (acc.startsWith('comp_')) {
-    const compId = acc.replace('comp_', '');
-    const comp = (state.companies || []).find(x => x.id === compId);
-    if (comp && comp.password === pass) ok = true;
+    const id = acc.replace('comp_', '');
+    const comp = state.companies.find(x => x.id === id);
+    ok = (comp && comp.password === pass);
   }
 
   if (ok) {
     state.currentUserKey = acc;
+    window.saveStockState();
     document.getElementById('login-modal').style.display = 'none';
     document.getElementById('login-password-input').value = '';
-    saveState();
-    renderAll();
-    alert('Kirjautuminen onnistui!');
+    window.renderAllStockApp();
   } else {
-    alert('Väärä salasana!');
+    alert('Virheellinen salasana!');
   }
-};
+}
+
+window.renderAllStockApp = function() {
+  if (!window.state) return;
+  updateUserDisplayBadge();
+  renderStocksMarket();
+  renderPortfolio();
+  renderCompanyManagement();
+  renderAdminVault();
+  updateChartDropdown();
+  if (window.stockChart) updateStockChart();
+}
+
+function updateUserDisplayBadge() {
+  const badge = document.getElementById('current-user-badge');
+  if (!badge) return;
+  const userKey = state.currentUserKey || 'state';
+  let txt = 'Valtio (Pääkäyttäjä)';
+
+  if (userKey === 'state') {
+    txt = 'Valtio (Pääkäyttäjä & Sijoittaja)';
+  } else if (userKey.startsWith('cit_')) {
+    const id = Number(userKey.replace('cit_', ''));
+    const c = state.citizens.find(x => x.id === id);
+    if (c) txt = `Kansalainen #${c.id}: ${c.name}`;
+  } else if (userKey.startsWith('comp_')) {
+    const id = userKey.replace('comp_', '');
+    const comp = state.companies.find(x => x.id === id);
+    if (comp) txt = `Yritys: ${comp.name}`;
+  }
+  badge.textContent = txt;
+
+  const adminNav = document.getElementById('nav-tab-admin');
+  if (adminNav) {
+    const isAdmin = (userKey === 'state');
+    adminNav.style.display = isAdmin ? 'block' : 'none';
+  }
+}
 
 window.switchTab = function(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById(tabId).style.display = 'block';
   if (btn) btn.classList.add('active');
-};
+  if (tabId === 'tab-stocks' && window.stockChart) window.stockChart.update();
+}
 
-window.renderAll = function() {
-  const badge = document.getElementById('current-user-badge');
-  if (badge) badge.textContent = ` ${getEntityName(state.currentUserKey)}`;
-
-  const isState = (state.currentUserKey === 'state');
-  document.getElementById('nav-tab-state').style.display = isState ? 'inline-block' : 'none';
-  document.getElementById('nav-tab-citizens').style.display = isState ? 'inline-block' : 'none';
-
-  renderUserDash();
-  renderStocksMarket();
-  renderProducts();
-  renderCitizens();
-  renderCompanies();
-  renderSelectors();
-};
-
-function renderUserDash() {
-  const details = document.getElementById('user-dash-account-details');
-  if (details) {
-    let name = getEntityName(state.currentUserKey);
-    let balance = getBalance(state.currentUserKey);
-    details.innerHTML = `
-      <p><strong>Käyttäjä / Tili:</strong> ${name}</p>
-      <p><strong>Raha / Saldo:</strong> <span style="color:var(--success); font-size:1.2rem;">${balance.toFixed(2)} €</span></p>
-    `;
+function getCompanyName(key) {
+  if (key === 'state') return 'Valtio';
+  if (key.startsWith('cit_')) {
+    const id = Number(key.replace('cit_', ''));
+    const c = state.citizens.find(x => x.id === id);
+    return c ? `Kansalainen: ${c.name}` : key;
   }
+  if (key.startsWith('comp_')) {
+    const id = key.replace('comp_', '');
+    const comp = state.companies.find(x => x.id === id);
+    return comp ? `Yritys: ${comp.name}` : key;
+  }
+  return key;
+}
 
-  // Portfolio Rendering
-  const portDetails = document.getElementById('user-portfolio-details');
-  if (portDetails) {
-    const userPort = (state.portfolios && state.portfolios[state.currentUserKey]) || {};
-    let html = '';
-    let totalVal = 0;
-
-    Object.keys(userPort).forEach(compId => {
-      const count = userPort[compId];
-      if (count > 0) {
-        const comp = state.companies.find(c => c.id === compId);
-        if (comp) {
-          const value = count * comp.pricePerShare;
-          totalVal += value;
-          html += `
-            <div style="background:#0f172a; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between;">
-              <div>
-                <strong>${comp.name}</strong><br>
-                <span style="font-size:0.8rem; color:var(--text-muted);">${count} kpl @ ${comp.pricePerShare.toFixed(2)} €</span>
-              </div>
-              <strong style="color:var(--success);">${value.toFixed(2)} €</strong>
-            </div>
-          `;
-        }
-      }
+function getCompanySubscriptionsTotal(compId) {
+  let subTotal = 0;
+  if (state.subscriptions && Array.isArray(state.subscriptions)) {
+    state.subscriptions.forEach(sub => {
+      if (sub.receiver === 'comp_' + compId) subTotal += Number(sub.amount || 0);
+      if (sub.payer === 'comp_' + compId) subTotal -= Number(sub.amount || 0);
     });
-
-    if (!html) html = '<p style="color:var(--text-muted);">Salkkusi on tyhjä.</p>';
-    else html += `<hr style="border-color:var(--card-border); margin:12px 0;"><div style="display:flex; justify-content:space-between;"><strong>Salkun kokonaisarvo:</strong><strong style="color:var(--success);">${totalVal.toFixed(2)} €</strong></div>`;
-
-    portDetails.innerHTML = html;
   }
+  return subTotal;
 }
 
+function calculateCompanyNetIncome(compId) {
+  const sData = state.stocksData[compId] || { manualIncome: 0, manualExpense: 0 };
+  let manualNet = Number(sData.manualIncome || 0) - Number(sData.manualExpense || 0);
+  let subNet = getCompanySubscriptionsTotal(compId);
+  return manualNet + subNet;
+}
+
+function calculateStockPrice(compId) {
+  const comp = state.companies.find(x => x.id === compId);
+  const sData = state.stocksData[compId] || { sharesCount: 1000 };
+  if (!comp) return 10;
+
+  const cash = Number(comp.balance || 0);
+  const netIncome = calculateCompanyNetIncome(compId);
+  const shares = Math.max(1, Number(sData.sharesCount || 1000));
+
+  let basePrice = (cash + (netIncome * 12)) / shares;
+  
+  if (!state.stockPriceModifiers) state.stockPriceModifiers = {};
+  const modifier = state.stockPriceModifiers[compId] || 0; 
+  
+  let finalPrice = basePrice * (1 + (modifier / 100));
+  return Math.max(0.1, finalPrice);
+}
+
+function getAvailableShares(compId) {
+  const sData = state.stocksData[compId] || { sharesCount: 1000 };
+  const totalShares = Number(sData.sharesCount || 1000);
+  let ownedByOthers = 0;
+  if (state.portfolios) {
+    Object.values(state.portfolios).forEach(port => {
+      if (port && port[compId]) ownedByOthers += Number(port[compId] || 0);
+    });
+  }
+  return Math.max(0, totalShares - ownedByOthers);
+}
+
+/* PÖRSSILISTA JA KAUPANKÄYNTI */
 function renderStocksMarket() {
-  const list = document.getElementById('stocks-market-list');
-  if (!list) return;
+  const container = document.getElementById('stocks-market-list');
+  if (!container) return;
+  container.innerHTML = '';
 
-  const userPort = (state.portfolios && state.portfolios[state.currentUserKey]) || {};
+  if (!state.marketListings) state.marketListings = [];
 
-  list.innerHTML = state.companies.map(comp => {
-    const owned = userPort[comp.id] || 0;
-    return `
+  state.companies.forEach(comp => {
+    const price = calculateStockPrice(comp.id);
+    const history = state.historyStockPrices[comp.id] || [price];
+    const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+    const isUp = price >= prevPrice;
+
+    const sData = state.stocksData[comp.id] || { sharesCount: 1000, useDividends: false };
+    const netInc = calculateCompanyNetIncome(comp.id);
+    const availableFromCompany = getAvailableShares(comp.id);
+
+    let dividendText = sData.useDividends ? (sData.dividendType === 'percent' ? `${sData.dividendValue}% tuloksesta` : `${sData.dividendValue} € / osake`) : 'Ei käytössä';
+
+    const compListings = state.marketListings.filter(l => l.compId === comp.id);
+    let listingsHtml = '';
+
+    if (compListings.length > 0) {
+      listingsHtml = `<div style="margin-top:10px; border-top:1px dashed var(--card-border); padding-top:8px;">
+        <span style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Käyttäjien myyntiin laittamat erät:</span>`;
+      
+      compListings.forEach((listing, index) => {
+        listingsHtml += `
+          <div style="background:#0f172a; padding:6px 10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border:1px solid var(--card-border);">
+            <div>
+              <strong>${getCompanyName(listing.sellerKey)}</strong><br>
+              <span style="color:var(--text-muted);">${listing.qty} kpl (Hinta: ${listing.price.toFixed(2)} €/kpl)</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="number" id="buy-listing-qty-${comp.id}-${index}" min="1" max="${listing.qty}" value="${listing.qty}" style="width:60px; padding:2px 4px;">
+              <button class="btn btn-sm btn-success" onclick="buyFromListing('${comp.id}', ${index})">Osta</button>
+            </div>
+          </div>
+        `;
+      });
+      listingsHtml += `</div>`;
+    }
+
+    container.innerHTML += `
       <div class="stock-card">
-        <div>
-          <h3 style="color:#38bdf8;">${comp.name} (${comp.industry})</h3>
-          <p style="font-size:0.85rem; color:var(--text-muted);">Hinta per osake: <strong style="color:var(--success);">${comp.pricePerShare.toFixed(2)} €</strong></p>
-          <p style="font-size:0.85rem; color:var(--text-muted);">Omistat: <strong>${owned} kpl</strong></p>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <strong style="color:#38bdf8; font-size:1.1rem;">${comp.name}</strong>
+          <span class="stats-badge ${isUp ? '' : 'negative'}">${price.toFixed(2)} € / osake</span>
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="number" id="stock-qty-${comp.id}" min="1" value="1" style="width:70px;">
-          <button class="btn btn-sm btn-success" onclick="buyStock('${comp.id}')">Osta</button>
-          <button class="btn btn-sm btn-danger" onclick="sellStock('${comp.id}')">Myy</button>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
+          Kassa: ${Number(comp.balance).toFixed(2)} € | Kuukausitulos: ${netInc.toFixed(2)} €<br>
+          Osakkeita vapaana yhtiöltä: <strong style="color: ${availableFromCompany > 0 ? 'var(--success)' : 'var(--danger)'};">${availableFromCompany} / ${sData.sharesCount} kpl</strong><br>
+          Osinko: ${dividendText}
         </div>
+
+        <div style="display:flex; gap:8px; align-items:center; margin-top:10px; margin-bottom:8px;">
+          <input type="number" id="buy-qty-${comp.id}" min="1" value="1" style="width:90px;">
+          <button class="btn btn-sm btn-success" onclick="buyStock('${comp.id}')">Osta yhtiöltä</button>
+        </div>
+        ${listingsHtml}
       </div>
     `;
-  }).join('');
-}
-
-window.buyStock = function(compId) {
-  const comp = state.companies.find(c => c.id === compId);
-  const qtyInput = document.getElementById(`stock-qty-${compId}`);
-  const qty = parseInt(qtyInput.value) || 0;
-
-  if (!comp || qty <= 0) return;
-  const cost = qty * comp.pricePerShare;
-  const userBalance = getBalance(state.currentUserKey);
-
-  if (userBalance < cost) {
-    alert('Tilillä ei ole tarpeeksi rahaa!');
-    return;
-  }
-
-  updateBalance(state.currentUserKey, -cost);
-  comp.balance += cost;
-
-  if (!state.portfolios[state.currentUserKey]) state.portfolios[state.currentUserKey] = {};
-  state.portfolios[state.currentUserKey][compId] = (state.portfolios[state.currentUserKey][compId] || 0) + qty;
-
-  saveState();
-  renderAll();
-  alert(`Ostettiin ${qty} kpl osaketta ${comp.name}!`);
-};
-
-window.sellStock = function(compId) {
-  const comp = state.companies.find(c => c.id === compId);
-  const qtyInput = document.getElementById(`stock-qty-${compId}`);
-  const qty = parseInt(qtyInput.value) || 0;
-
-  if (!comp || qty <= 0) return;
-  const userPort = state.portfolios[state.currentUserKey] || {};
-  const owned = userPort[compId] || 0;
-
-  if (owned < qty) {
-    alert('Sinulla ei ole riittävästi osakkeita myytäväksi!');
-    return;
-  }
-
-  const revenue = qty * comp.pricePerShare;
-
-  if (comp.balance < revenue) {
-    alert('Yrityksellä ei ole tarpeeksi kassaa ostaa osakkeita takaisin!');
-    return;
-  }
-
-  updateBalance(state.currentUserKey, revenue);
-  comp.balance -= revenue;
-  state.portfolios[state.currentUserKey][compId] -= qty;
-
-  saveState();
-  renderAll();
-  alert(`Myytiin ${qty} kpl osaketta ${comp.name}!`);
-};
-
-function renderProducts() {
-  const list = document.getElementById('products-list');
-  if (list) {
-    list.innerHTML = (state.products || []).map(p => `<p>${p.name} - ${p.price} €</p>`).join('') || '<p>Ei tuotteita.</p>';
-  }
-}
-
-function renderCitizens() {
-  const container = document.getElementById('citizens-container');
-  if (container) {
-    container.innerHTML = (state.citizens || []).map(c => `
-      <div class="citizen-card">
-        <h3>${c.name}</h3>
-        <p>Saldo: ${c.balance.toFixed(2)} €</p>
-      </div>
-    `).join('');
-  }
-}
-
-function renderCompanies() {
-  const list = document.getElementById('companies-list');
-  if (list) {
-    list.innerHTML = (state.companies || []).map(c => `
-      <div style="background:#0f172a; padding:10px; border-radius:6px; margin-bottom:8px;">
-        <h4>${c.name}</h4>
-        <p>Kassa: ${c.balance.toFixed(2)} € | Osake: ${c.pricePerShare.toFixed(2)} €</p>
-      </div>
-    `).join('');
-  }
-}
-
-function renderSelectors() {
-  ['transfer-from', 'transfer-to'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    let opts = `<option value="state">Valtio</option><optgroup label="Kansalaiset">`;
-    (state.citizens || []).forEach(c => { opts += `<option value="cit_${c.id}">${c.name}</option>`; });
-    opts += `</optgroup><optgroup label="Yritykset">`;
-    (state.companies || []).forEach(comp => { opts += `<option value="comp_${comp.id}">${comp.name}</option>`; });
-    opts += `</optgroup>`;
-    el.innerHTML = opts;
   });
 }
 
-window.createProduct = function(e) { e.preventDefault(); alert('Tuote lisätty!'); };
-window.executeTransfer = function(e) { e.preventDefault(); alert('Siirto tehty!'); };
+window.buyStock = function(compId) {
+  const userKey = state.currentUserKey || 'state';
+  const qtyField = document.getElementById(`buy-qty-${compId}`);
+  const qty = qtyField ? Number(qtyField.value) || 0 : 0;
+  if (qty <= 0) return;
+
+  const available = getAvailableShares(compId);
+  if (qty > available) return;
+
+  const price = calculateStockPrice(compId);
+  const cost = price * qty;
+
+  const userBal = getEntityBalance(userKey);
+  if (userBal < cost) return;
+
+  adjustEntityBalance(userKey, -cost);
+  adjustEntityBalance('comp_' + compId, cost);
+  
+  if (!state.portfolios[userKey]) state.portfolios[userKey] = {};
+  state.portfolios[userKey][compId] = (state.portfolios[userKey][compId] || 0) + qty;
+
+  if (!state.stockPriceModifiers) state.stockPriceModifiers = {};
+  state.stockPriceModifiers[compId] = (state.stockPriceModifiers[compId] || 0) + (0.20 * qty);
+
+  recordStockHistory(compId);
+  window.saveStockState();
+  renderAllStockApp();
+}
+
+window.buyFromListing = function(compId, listingIndex) {
+  const userKey = state.currentUserKey || 'state';
+  const compListings = state.marketListings.filter(l => l.compId === compId);
+  const listing = compListings[listingIndex];
+  if (!listing) return;
+
+  if (listing.sellerKey === userKey) {
+    alert('Et voi ostaa omia myyntieräsi!');
+    return;
+  }
+
+  const qtyField = document.getElementById(`buy-listing-qty-${compId}-${listingIndex}`);
+  const qtyToBuy = qtyField ? Number(qtyField.value) || 0 : 0;
+  if (qtyToBuy <= 0 || qtyToBuy > listing.qty) {
+    return;
+  }
+
+  const cost = listing.price * qtyToBuy;
+  const buyerBal = getEntityBalance(userKey);
+  if (buyerBal < cost) {
+    return;
+  }
+
+  adjustEntityBalance(userKey, -cost);
+  adjustEntityBalance(listing.sellerKey, cost);
+
+  if (!state.portfolios[userKey]) state.portfolios[userKey] = {};
+  state.portfolios[userKey][compId] = (state.portfolios[userKey][compId] || 0) + qtyToBuy;
+
+  listing.qty -= qtyToBuy;
+  if (listing.qty <= 0) {
+    const realIdx = state.marketListings.indexOf(listing);
+    if (realIdx > -1) state.marketListings.splice(realIdx, 1);
+  }
+
+  window.saveStockState();
+  renderAllStockApp();
+}
+
+window.listStockForSale = function(compId) {
+  const userKey = state.currentUserKey || 'state';
+  const qtyField = document.getElementById(`sell-qty-${compId}`);
+  const qty = qtyField ? Number(qtyField.value) || 0 : 0;
+  if (qty <= 0) return;
+
+  const userPort = state.portfolios[userKey] || {};
+  const owned = userPort[compId] || 0;
+  if (owned < qty) {
+    return;
+  }
+
+  const price = calculateStockPrice(compId);
+
+  userPort[compId] -= qty;
+  if (userPort[compId] <= 0) delete userPort[compId];
+
+  if (!state.marketListings) state.marketListings = [];
+  state.marketListings.push({
+    compId: compId,
+    sellerKey: userKey,
+    qty: qty,
+    price: price
+  });
+
+  if (!state.stockPriceModifiers) state.stockPriceModifiers = {};
+  state.stockPriceModifiers[compId] = (state.stockPriceModifiers[compId] || 0) - (0.20 * qty);
+
+  recordStockHistory(compId);
+  window.saveStockState();
+  renderAllStockApp();
+}
+
+/* OMA SALKKU */
+function renderPortfolio() {
+  const userKey = state.currentUserKey || 'state';
+  const summaryEl = document.getElementById('portfolio-summary');
+  const listEl = document.getElementById('portfolio-stocks-list');
+  if (!summaryEl || !listEl) return;
+
+  const bal = getEntityBalance(userKey);
+  const userPort = state.portfolios[userKey] || {};
+
+  let totalStockVal = 0;
+  let stocksHtml = '';
+
+  Object.entries(userPort).forEach(([compId, qty]) => {
+    const comp = state.companies.find(x => x.id === compId);
+    if (!comp) return;
+    const price = calculateStockPrice(compId);
+    const val = price * qty;
+    totalStockVal += val;
+
+    stocksHtml += `
+      <div style="background:#0f172a; padding:10px; border-radius:6px; border:1px solid var(--card-border); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${comp.name}</strong> (${qty} kpl)<br>
+          <span style="font-size:0.8rem; color:var(--text-muted);">Kurssi: ${price.toFixed(2)} €</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="stats-badge" style="font-size:1rem;">${val.toFixed(2)} €</div>
+          <input type="number" id="sell-qty-${compId}" min="1" max="${qty}" value="1" style="width:60px;">
+          <button class="btn btn-sm btn-danger" onclick="listStockForSale('${compId}')">Myy markkinoille</button>
+        </div>
+      </div>
+    `;
+  });
+
+  summaryEl.innerHTML = `
+    <div style="font-size:0.9rem; margin-bottom:6px;">Käteissaldo: <strong>${bal.toFixed(2)} €</strong></div>
+    <div style="font-size:0.9rem; margin-bottom:6px;">Osakkeiden arvo: <strong>${totalStockVal.toFixed(2)} €</strong></div>
+    <div style="font-size:1.1rem; font-weight:bold; color:#38bdf8; margin-top:10px;">Varallisuus yhteensä: ${(bal + totalStockVal).toFixed(2)} €</div>
+  `;
+
+  listEl.innerHTML = stocksHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Ei osakeomistuksia.</p>';
+}
+
+/* YRITYSTEN TALOUS & ASETUKSET (VAIN VALTIO JA KYS. YRITYS VOIVAT MUOKATA) */
+function renderCompanyManagement() {
+  const container = document.getElementById('company-management-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const userKey = state.currentUserKey || 'state';
+  const isAdmin = (userKey === 'state');
+
+  state.companies.forEach((comp, idx) => {
+    if (!state.stocksData[comp.id]) {
+      state.stocksData[comp.id] = { sharesCount: 1000, manualIncome: 5000, manualExpense: 3000, dividendType: 'amount', dividendValue: 2.00, useDividends: true };
+    }
+    const sData = state.stocksData[comp.id];
+    const subTotal = getCompanySubscriptionsTotal(comp.id);
+    const available = getAvailableShares(comp.id);
+
+    const isOwnerCompany = (userKey === 'comp_' + comp.id);
+    const canEdit = isAdmin || isOwnerCompany;
+    const disabledAttr = canEdit ? '' : 'disabled';
+
+    container.innerHTML += `
+      <div style="background:#111827; border:1px solid var(--card-border); padding:14px; border-radius:8px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 style="color:#38bdf8; font-size:1rem;">${comp.name}</h3>
+          ${!canEdit ? '<span style="font-size:0.75rem; color:var(--danger); background:rgba(239,68,68,0.1); padding:2px 8px; border-radius:4px;">🔒 Ei muokkausoikeutta</span>' : '<span style="font-size:0.75rem; color:var(--success); background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:4px;">✏️ Muokkausoikeus</span>'}
+        </div>
+        <div style="background:#0f172a; padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--card-border);">
+          <span style="color:var(--text-muted);">Kuukausimaksut yhteensä (saapuvat / lähtevät):</span>
+          <strong style="color:${subTotal >= 0 ? 'var(--success)' : 'var(--danger)'};">${subTotal >= 0 ? '+' : ''}${subTotal.toFixed(2)} € / kk</strong>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
+          Osakkeet vapaana markkinoilla: <strong style="color:#f8fafc;">${available} / ${sData.sharesCount} kpl</strong>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+          <div class="form-group">
+            <label>Manuaaliset Tulot (€/kk):</label>
+            <input type="number" value="${sData.manualIncome}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualIncome', this.value)">
+          </div>
+          <div class="form-group">
+            <label>Manuaaliset Menot (€/kk):</label>
+            <input type="number" value="${sData.manualExpense}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualExpense', this.value)">
+          </div>
+          <div class="form-group">
+            <label>Kokonaisosakemäärä (kpl):</label>
+            <input type="number" value="${sData.sharesCount}" min="1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'sharesCount', this.value)">
+          </div>
+          <div class="form-group">
+            <label>Osinkotyyppi:</label>
+            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendType', this.value)">
+              <option value="amount" ${sData.dividendType === 'amount' ? 'selected' : ''}>Kiinteä (€ / osake)</option>
+              <option value="percent" ${sData.dividendType === 'percent' ? 'selected' : ''}>Prosentti (%) tuloksesta</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Osingon arvo / määrä:</label>
+            <input type="number" value="${sData.dividendValue}" step="0.1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendValue', this.value)">
+          </div>
+          <div class="form-group">
+            <label>Osingonmaksu:</label>
+            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'useDividends', this.value === 'true')">
+              <option value="true" ${sData.useDividends ? 'selected' : ''}>Käytössä</option>
+              <option value="false" ${!sData.useDividends ? 'selected' : ''}>Ei käytössä</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+window.updateStockSetting = function(compId, field, val) {
+  const userKey = state.currentUserKey || 'state';
+  const isAdmin = (userKey === 'state');
+  const isOwnerCompany = (userKey === 'comp_' + compId);
+
+  if (!isAdmin && !isOwnerCompany) {
+    alert('Vain kyseinen yritys tai Valtio voi muokata näitä tietoja!');
+    renderCompanyManagement();
+    return;
+  }
+
+  if (!state.stocksData[compId]) state.stocksData[compId] = {};
+  if (field === 'useDividends') {
+    state.stocksData[compId][field] = (val === true);
+  } else if (field === 'dividendType') {
+    state.stocksData[compId][field] = val;
+  } else {
+    state.stocksData[compId][field] = Number(val);
+  }
+  recordStockHistory(compId);
+  window.saveStockState();
+  renderAllStockApp();
+}
+
+/* VALTION ADMIN VAULT (Vain valtiolle/pääkäyttäjälle näkyvä salasanaosio) */
+function renderAdminVault() {
+  const userKey = state.currentUserKey || 'state';
+  if (userKey !== 'state') return;
+
+  const citList = document.getElementById('admin-citizens-list');
+  if (citList) {
+    citList.innerHTML = '<h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Kansalaisten Tilit</h3>';
+    state.citizens.forEach((c, idx) => {
+      citList.innerHTML += `
+        <div style="background:#0f172a; padding:8px; border-radius:6px; border:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.85rem;">
+          <div><strong>#${c.id} ${c.name}</strong></div>
+          <div><input type="text" value="${c.password || ''}" style="width:120px; padding:2px 6px;" onchange="updateCitizenPwd(${idx}, this.value)"></div>
+        </div>
+      `;
+    });
+  }
+
+  const compList = document.getElementById('admin-companies-list');
+  if (compList) {
+    compList.innerHTML = '<h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Yritysten Tilit</h3>';
+    state.companies.forEach((comp, idx) => {
+      compList.innerHTML += `
+        <div style="background:#0f172a; padding:8px; border-radius:6px; border:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.85rem;">
+          <div><strong>${comp.name}</strong></div>
+          <div><input type="text" value="${comp.password || ''}" style="width:120px; padding:2px 6px;" onchange="updateCompanyPwd(${idx}, this.value)"></div>
+        </div>
+      `;
+    });
+  }
+}
+
+window.updateCitizenPwd = function(idx, val) { state.citizens[idx].password = val.trim(); window.saveStockState(); }
+window.updateCompanyPwd = function(idx, val) { state.companies[idx].password = val.trim(); window.saveStockState(); }
+
+/* APUPULSSI SALDOILLE */
+function getEntityBalance(key) {
+  if (key === 'state') return state.stateBalance;
+  if (key.startsWith('comp_')) {
+    const compId = key.replace('comp_', '');
+    const comp = state.companies.find(x => String(x.id) === String(compId));
+    return comp ? comp.balance : 0;
+  }
+  if (key.startsWith('cit_')) {
+    const id = Number(key.replace('cit_', ''));
+    const c = state.citizens.find(x => x.id === id);
+    return c ? c.balance : 0;
+  }
+  return 0;
+}
+
+function adjustEntityBalance(key, amt) {
+  const num = Number(amt) || 0;
+  if (key === 'state') {
+    state.stateBalance += num;
+  } else if (key.startsWith('comp_')) {
+    const compId = key.replace('comp_', '');
+    const comp = state.companies.find(x => String(x.id) === String(compId));
+    if (comp) comp.balance += num;
+  } else if (key.startsWith('cit_')) {
+    const id = Number(key.replace('cit_', ''));
+    const c = state.citizens.find(x => x.id === id);
+    if (c) c.balance += num;
+  }
+}
+
+/* KAAVIOIDEN HALLINTA (ITSE KOODATTU VIIVAKAAVIO) */
+function updateChartDropdown() {
+  const sel = document.getElementById('chart-company-select');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = state.companies.map(comp => `<option value="${comp.id}">${comp.name}</option>`).join('');
+  if (currentVal && state.companies.some(c => c.id === currentVal)) {
+    sel.value = currentVal;
+  }
+}
+
+window.initStockChart = function() {
+  const ctx = document.getElementById('stockHistoryChart');
+  if (!ctx) return;
+
+  window.stockChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Alku'],
+      datasets: [{
+        label: 'Osakkeen arvo (€)',
+        data: [10],
+        borderColor: '#38bdf8',
+        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+        y: { grid: { color: '#334155' }, ticks: { color: '#38bdf8' } }
+      }
+    }
+  });
+  updateStockChart();
+}
+
+function recordStockHistory(compId) {
+  if (!state.historyStockPrices) state.historyStockPrices = {};
+  if (!state.historyStockPrices[compId]) {
+    state.historyStockPrices[compId] = [calculateStockPrice(compId)];
+  }
+  
+  const currentPrice = calculateStockPrice(compId);
+  state.historyStockPrices[compId].push(currentPrice);
+
+  if (state.historyStockPrices[compId].length > 100) {
+    state.historyStockPrices[compId] = state.historyStockPrices[compId].slice(-100);
+  }
+}
+
+window.updateStockChart = function() {
+  if (!window.stockChart) return;
+  const sel = document.getElementById('chart-company-select');
+  if (!sel) return;
+  const compId = sel.value;
+  if (!compId) return;
+
+  if (!state.historyStockPrices) state.historyStockPrices = {};
+  if (!state.historyStockPrices[compId] || state.historyStockPrices[compId].length === 0) {
+    state.historyStockPrices[compId] = [calculateStockPrice(compId)];
+  }
+
+  const historyArr = state.historyStockPrices[compId];
+  const labels = historyArr.map((_, idx) => idx === 0 ? 'Alku' : `Päivitys ${idx}`);
+
+  window.stockChart.data.labels = labels;
+  window.stockChart.data.datasets[0].data = historyArr;
+  window.stockChart.data.datasets[0].label = `Osakkeen arvo (€) - ${state.companies.find(c => c.id === compId)?.name || ''}`;
+  window.stockChart.update();
+}
 </script>
+
 </body>
 </html>
