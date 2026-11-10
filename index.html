@@ -161,10 +161,6 @@
         <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
         <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä & Sijoittaja)</span>
       </div>
-      <div>
-        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Simulaation kuukausi (Firebase):</span>
-        <span class="user-badge" id="current-month-badge" style="color:#38bdf8;"> Kuukausi 1</span>
-      </div>
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button class="btn btn-sm btn-secondary" onclick="openLoginModal()">Vaihda Tiliä</button>
@@ -189,7 +185,7 @@
       <div class="card">
         <h2> Pörssilista & Hinnat</h2>
         <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
-          Yhtiöltä ostaminen kasvattaa suoraan yrityksen kassaa. Ostaminen nostaa hintaa +0.20 % / osake.
+          Yhtiöltä ostaminen kasvattaa suoraan yrityksen kassaa. Ostaminen nostaa hintaa +0.20 % / osake[cite: 1].
         </p>
         <div id="stocks-market-list"></div>
       </div>
@@ -226,7 +222,7 @@
     <div class="card">
       <h2> Yritysten Tulot, Menot, Manuaaliset Kuukausimaksut & Osingot</h2>
       <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
-        Vain yritys itse sekä Valtio voivat muokata yrityksen talousarvoja ja osinkoasetuksia.
+        Vain yritys itse sekä Valtio voivat muokata yrityksen talousarvoja ja osinkoasetuksia[cite: 1]. Päivitä manuaaliset kuukausimaksut tarvittaessa suoraan kenttiin[cite: 1].
       </p>
       <div id="company-management-list"></div>
     </div>
@@ -271,7 +267,6 @@
       onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
           const incomingData = docSnap.data();
-          const prevMonth = window.state ? window.state.currentMonth : null;
           
           if (!window.state) {
             window.state = incomingData;
@@ -279,8 +274,6 @@
             window.state.companies = incomingData.companies || window.state.companies;
             window.state.citizens = incomingData.citizens || window.state.citizens;
             window.state.stateBalance = incomingData.stateBalance ?? window.state.stateBalance;
-            window.state.subscriptions = incomingData.subscriptions || window.state.subscriptions;
-            window.state.currentMonth = incomingData.currentMonth ?? window.state.currentMonth;
           }
 
           if (!window.state.portfolios) window.state.portfolios = {};
@@ -288,7 +281,6 @@
           if (!window.state.historyStockPrices) window.state.historyStockPrices = {};
           if (!window.state.stockPriceModifiers) window.state.stockPriceModifiers = {};
           if (!window.state.marketListings) window.state.marketListings = [];
-          if (window.state.currentMonth === undefined) window.state.currentMonth = 1;
           
           if (window.state.companies && Array.isArray(window.state.companies)) {
             window.state.companies.forEach(comp => {
@@ -299,13 +291,9 @@
                   manualExpense: 3000,
                   dividendType: 'amount',
                   dividendValue: 2.00,
-                  useDividends: true,
-                  dividendFrequency: 'monthly'
+                  useDividends: true
                 };
-              } else if (!window.state.stocksData[comp.id].dividendFrequency) {
-                window.state.stocksData[comp.id].dividendFrequency = 'monthly';
               }
-
               if (window.state.stockPriceModifiers[comp.id] === undefined) {
                 window.state.stockPriceModifiers[comp.id] = 0;
               }
@@ -313,11 +301,6 @@
                 window.state.historyStockPrices[comp.id] = [calculateStockPrice(comp.id)];
               }
             });
-          }
-
-          // Jos Firebasesta tuleva kuukausi on eri kuin aikaisemmin muistissa ollut, suoritetaan kuukauden vaihdon osinkologiikka
-          if (prevMonth !== null && incomingData.currentMonth && incomingData.currentMonth > prevMonth) {
-            handleAutomaticMonthAdvance(incomingData.currentMonth);
           }
 
           if (window.renderAllStockApp) {
@@ -432,9 +415,6 @@ window.renderAllStockApp = function() {
 
 function updateUserDisplayBadge() {
   const badge = document.getElementById('current-user-badge');
-  const monthBadge = document.getElementById('current-month-badge');
-  if (monthBadge) monthBadge.textContent = ` Kuukausi ${state.currentMonth || 1}`;
-
   if (!badge) return;
   const userKey = state.currentUserKey || 'state';
   let txt = 'Valtio (Pääkäyttäjä)';
@@ -497,6 +477,7 @@ function calculateStockPrice(compId) {
   const netIncome = calculateCompanyNetIncome(compId);
   const shares = Math.max(1, Number(sData.sharesCount || 1000));
 
+  // TÄSSÄ: Kuukausitulos kerrotaan 12:lla, lasketaan yhteen kassan kanssa ja jaetaan osakkeiden määrällä[cite: 1]
   let basePrice = (cash + (netIncome * 12)) / shares;
   
   if (!state.stockPriceModifiers) state.stockPriceModifiers = {};
@@ -541,13 +522,11 @@ function renderStocksMarket() {
     const prevPrice = history.length > 1 ? history[history.length - 2] : price;
     const isUp = price >= prevPrice;
 
-    const sData = state.stocksData[comp.id] || { sharesCount: 1000, useDividends: false, dividendFrequency: 'monthly' };
+    const sData = state.stocksData[comp.id] || { sharesCount: 1000, useDividends: false };
     const netInc = calculateCompanyNetIncome(comp.id);
     const availableFromCompany = getAvailableShares(comp.id);
 
-    let dividendText = sData.useDividends 
-      ? (sData.dividendType === 'percent' ? `${sData.dividendValue}% tuloksesta` : `${sData.dividendValue} € / osake`) + ` (${sData.dividendFrequency === 'yearly' ? 'Vuosittain' : 'Kuukausittain'})`
-      : 'Ei käytössä';
+    let dividendText = sData.useDividends ? (sData.dividendType === 'percent' ? `${sData.dividendValue}% tuloksesta` : `${sData.dividendValue} € / osake`) : 'Ei käytössä';
 
     const compListings = state.marketListings.filter(l => String(l.compId) === String(comp.id));
     let listingsHtml = '';
@@ -580,7 +559,7 @@ function renderStocksMarket() {
           <span class="stats-badge ${isUp ? '' : 'negative'}">${price.toFixed(2)} € / osake</span>
         </div>
         <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
-          Kassa: ${Number(comp.balance).toFixed(2)} € | Netto tulot/menot: ${netInc.toFixed(2)} €<br>
+          Yrityksen kassa: <strong style="color:#f8fafc;">${Number(comp.balance || 0).toFixed(2)} €</strong> | Nettotulos (kk): ${netInc.toFixed(2)} €<br>
           Osakkeita vapaana yhtiöltä: <strong style="color: ${availableFromCompany > 0 ? 'var(--success)' : 'var(--danger)'};">${availableFromCompany} / ${sData.sharesCount} kpl</strong><br>
           Osinko: ${dividendText}
         </div>
@@ -748,7 +727,7 @@ function renderPortfolio() {
   listEl.innerHTML = stocksHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Ei osakeomistuksia.</p>';
 }
 
-/* YRITYSTEN TALOUS & ASETUKSET */
+/* YRITYSTEN TALOUS & ASETUKSET (VAIN VALTIO JA KYS. YRITYS VOIVAT MUOKATA) */
 function renderCompanyManagement() {
   const container = document.getElementById('company-management-list');
   if (!container || !state.companies) return;
@@ -759,7 +738,7 @@ function renderCompanyManagement() {
 
   state.companies.forEach((comp, idx) => {
     if (!state.stocksData[comp.id]) {
-      state.stocksData[comp.id] = { sharesCount: 1000, manualIncome: 5000, manualExpense: 3000, dividendType: 'amount', dividendValue: 2.00, useDividends: true, dividendFrequency: 'monthly' };
+      state.stocksData[comp.id] = { sharesCount: 1000, manualIncome: 5000, manualExpense: 3000, dividendType: 'amount', dividendValue: 2.00, useDividends: true };
     }
     const sData = state.stocksData[comp.id];
     const available = getAvailableShares(comp.id);
@@ -775,11 +754,11 @@ function renderCompanyManagement() {
           ${!canEdit ? '<span style="font-size:0.75rem; color:var(--danger); background:rgba(239,68,68,0.1); padding:2px 8px; border-radius:4px;">🔒 Ei muokkausoikeutta</span>' : '<span style="font-size:0.75rem; color:var(--success); background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:4px;">✏️ Muokkausoikeus</span>'}
         </div>
         <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
-          Osakkeet vapaana markkinoilla: <strong style="color:#f8fafc;">${available} / ${sData.sharesCount} kpl</strong>
+          Yrityksen kassa: <strong style="color:#38bdf8;">${Number(comp.balance || 0).toFixed(2)} €</strong> | Osakkeita vapaana markkinoilla: <strong style="color:#f8fafc;">${available} / ${sData.sharesCount} kpl</strong>
         </div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
           <div class="form-group">
-            <label>Manuaaliset Tulot / Maksut (€/kk):</label>
+            <label>Manuaaliset Tulot (€/kk):</label>
             <input type="number" value="${sData.manualIncome}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualIncome', this.value)">
           </div>
           <div class="form-group">
@@ -800,13 +779,6 @@ function renderCompanyManagement() {
           <div class="form-group">
             <label>Osingon arvo / määrä:</label>
             <input type="number" value="${sData.dividendValue}" step="0.1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendValue', this.value)">
-          </div>
-          <div class="form-group">
-            <label>Maksutiheys:</label>
-            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendFrequency', this.value)">
-              <option value="monthly" ${sData.dividendFrequency === 'monthly' ? 'selected' : ''}>Kuukausittain</option>
-              <option value="yearly" ${sData.dividendFrequency === 'yearly' ? 'selected' : ''}>Vuosittain (Joka 12. kk)</option>
-            </select>
           </div>
           <div class="form-group">
             <label>Osingonmaksu:</label>
@@ -835,7 +807,7 @@ window.updateStockSetting = function(compId, field, val) {
   if (!state.stocksData[compId]) state.stocksData[compId] = {};
   if (field === 'useDividends') {
     state.stocksData[compId][field] = (val === true);
-  } else if (field === 'dividendType' || field === 'dividendFrequency') {
+  } else if (field === 'dividendType') {
     state.stocksData[compId][field] = val;
   } else {
     state.stocksData[compId][field] = Number(val);
@@ -846,56 +818,7 @@ window.updateStockSetting = function(compId, field, val) {
   renderAllStockApp();
 }
 
-/* AUTOMAATTINEN KUUKAUDEN ETENEMINEN JA OSINKOJEN MAKSULOGIIKKA FIREBASEN POHJALTA */
-function handleAutomaticMonthAdvance(newMonth) {
-  const isYearlyMonth = (newMonth % 12 === 0);
-
-  if (state.companies) {
-    state.companies.forEach(comp => {
-      const compId = comp.id;
-      const sData = state.stocksData[compId];
-      if (!sData) return;
-
-      // Päivitetään kuukausittain vaihtuva osinkoprosentti
-      if (sData.dividendType === 'percent') {
-        let variation = (Math.random() - 0.5) * 1.0;
-        let newVal = Math.max(0.5, Math.min(50, (Number(sData.dividendValue) || 5) + variation));
-        sData.dividendValue = Number(newVal.toFixed(1));
-      }
-
-      // Tarkistetaan maksetaanko osinko tässä kuussa
-      const shouldPay = sData.useDividends && (sData.dividendFrequency === 'monthly' || (sData.dividendFrequency === 'yearly' && isYearlyMonth));
-
-      if (shouldPay) {
-        const netIncome = calculateCompanyNetIncome(compId);
-        let dividendPerShare = 0;
-
-        if (sData.dividendType === 'amount') {
-          dividendPerShare = Number(sData.dividendValue) || 0;
-        } else if (sData.dividendType === 'percent') {
-          const totalDividendPool = Math.max(0, netIncome * ((Number(sData.dividendValue) || 0) / 100));
-          const totalShares = Number(sData.sharesCount) || 1000;
-          dividendPerShare = totalDividendPool / totalShares;
-        }
-
-        if (dividendPerShare > 0 && state.portfolios) {
-          Object.entries(state.portfolios).forEach(([holderKey, port]) => {
-            const ownedQty = port[compId] || 0;
-            if (ownedQty > 0) {
-              const payout = dividendPerShare * ownedQty;
-              adjustEntityBalance('comp_' + compId, -payout);
-              adjustEntityBalance(holderKey, payout);
-            }
-          });
-        }
-      }
-
-      recordStockHistory(compId);
-    });
-  }
-}
-
-/* VALTION ADMIN VAULT */
+/* VALTION ADMIN VAULT (Vain valtiolle/pääkäyttäjälle näkyvä salasanaosio) */
 function renderAdminVault() {
   const userKey = state.currentUserKey || 'state';
   if (userKey !== 'state') return;
@@ -936,12 +859,12 @@ function getEntityBalance(key) {
   if (key.startsWith('comp_')) {
     const compId = key.replace('comp_', '');
     const comp = state.companies ? state.companies.find(x => String(x.id) === String(compId)) : null;
-    return comp ? comp.balance : 0;
+    return comp ? Number(comp.balance || 0) : 0;
   }
   if (key.startsWith('cit_')) {
     const id = Number(key.replace('cit_', ''));
     const c = state.citizens ? state.citizens.find(x => x.id === id) : null;
-    return c ? c.balance : 0;
+    return c ? Number(c.balance || 0) : 0;
   }
   return 0;
 }
@@ -953,15 +876,19 @@ function adjustEntityBalance(key, amt) {
   } else if (key.startsWith('comp_')) {
     const compId = key.replace('comp_', '');
     const comp = state.companies ? state.companies.find(x => String(x.id) === String(compId)) : null;
-    if (comp) comp.balance += num;
+    if (comp) {
+      comp.balance = Number(comp.balance || 0) + num;
+    }
   } else if (key.startsWith('cit_')) {
     const id = Number(key.replace('cit_', ''));
     const c = state.citizens ? state.citizens.find(x => x.id === id) : null;
-    if (c) c.balance += num;
+    if (c) {
+      c.balance = Number(c.balance || 0) + num;
+    }
   }
 }
 
-/* KAAVIOIDEN HALLINTA */
+/* KAAVIOIDEN HALLINTA (ITSE KOODATTU VIIVAKAAVIO) */
 function updateChartDropdown() {
   const sel = document.getElementById('chart-company-select');
   if (!sel || !state.companies) return;
@@ -1042,3 +969,4 @@ window.updateStockChart = function() {
 
 </body>
 </html>
+```[cite: 1]
