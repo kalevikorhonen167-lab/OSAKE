@@ -451,8 +451,17 @@ function getCompanySubscriptionsTotal(compId) {
   let subTotal = 0;
   if (state.subscriptions && Array.isArray(state.subscriptions)) {
     state.subscriptions.forEach(sub => {
-      if (sub.receiver === 'comp_' + compId) subTotal += Number(sub.amount || 0);
-      if (sub.payer === 'comp_' + compId) subTotal -= Number(sub.amount || 0);
+      // Käytetään tarkkaa string-vertailua (String(compId)), jotta ID-tyypit täsmäävät varmasti
+      const targetCompId = String(compId);
+      const receiverId = String(sub.receiver || '').replace(/^comp_/, '');
+      const payerId = String(sub.payer || '').replace(/^comp_/, '');
+
+      if (sub.receiver && receiverId === targetCompId) {
+        subTotal += Number(sub.amount || 0);
+      }
+      if (sub.payer && payerId === targetCompId) {
+        subTotal -= Number(sub.amount || 0);
+      }
     });
   }
   return subTotal;
@@ -492,7 +501,18 @@ function getAvailableShares(compId) {
       if (port && port[compId]) ownedByOthers += Number(port[compId] || 0);
     });
   }
-  return Math.max(0, totalShares - ownedByOthers);
+
+  // Mukautetaan myös markkinoilla aktiivisesti myynnissä olevat erät (jos ne on vähennetty jo salkuista)
+  let listedForSale = 0;
+  if (state.marketListings && Array.isArray(state.marketListings)) {
+    state.marketListings.forEach(l => {
+      if (l.compId === compId) listedForSale += Number(l.qty || 0);
+    });
+  }
+
+  // Osakkeita ei voi ikinä olla vapaana enempää kuin kokonaismäärä - omistetut osakkeet
+  const totalAllocated = ownedByOthers + listedForSale;
+  return Math.max(0, totalShares - totalAllocated);
 }
 
 /* PÖRSSILISTA JA KAUPANKÄYNTI */
@@ -552,8 +572,8 @@ function renderStocksMarket() {
         </div>
 
         <div style="display:flex; gap:8px; align-items:center; margin-top:10px; margin-bottom:8px;">
-          <input type="number" id="buy-qty-${comp.id}" min="1" value="1" style="width:90px;">
-          <button class="btn btn-sm btn-success" onclick="buyStock('${comp.id}')">Osta yhtiöltä</button>
+          <input type="number" id="buy-qty-${comp.id}" min="1" max="${availableFromCompany}" value="1" style="width:90px;" ${availableFromCompany <= 0 ? 'disabled' : ''}>
+          <button class="btn btn-sm btn-success" onclick="buyStock('${comp.id}')" ${availableFromCompany <= 0 ? 'disabled' : ''}>Osta yhtiöltä</button>
         </div>
         ${listingsHtml}
       </div>
@@ -568,13 +588,20 @@ window.buyStock = function(compId) {
   if (qty <= 0) return;
 
   const available = getAvailableShares(compId);
-  if (qty > available) return;
+  // Tarkistus: Jos osakkeita on 0 tai pyyntö ylittää saatavilla olevat, ei voi ostaa
+  if (available <= 0 || qty > available) {
+    alert('Ei tarpeeksi vapaita osakkeita saatavilla yhtiöltä!');
+    return;
+  }
 
   const price = calculateStockPrice(compId);
   const cost = price * qty;
 
   const userBal = getEntityBalance(userKey);
-  if (userBal < cost) return;
+  if (userBal < cost) {
+    alert('Saldo ei riitä osakkeiden ostamiseen!');
+    return;
+  }
 
   adjustEntityBalance(userKey, -cost);
   adjustEntityBalance('comp_' + compId, cost);
@@ -610,6 +637,7 @@ window.buyFromListing = function(compId, listingIndex) {
   const cost = listing.price * qtyToBuy;
   const buyerBal = getEntityBalance(userKey);
   if (buyerBal < cost) {
+    alert('Saldo ei riitä!');
     return;
   }
 
@@ -638,6 +666,7 @@ window.listStockForSale = function(compId) {
   const userPort = state.portfolios[userKey] || {};
   const owned = userPort[compId] || 0;
   if (owned < qty) {
+    alert('Sinulla ei ole näin monta osaketta!');
     return;
   }
 
@@ -677,7 +706,7 @@ function renderPortfolio() {
 
   Object.entries(userPort).forEach(([compId, qty]) => {
     const comp = state.companies.find(x => x.id === compId);
-    if (!comp) return;
+    if (!comp || qty <= 0) return;
     const price = calculateStockPrice(compId);
     const val = price * qty;
     totalStockVal += val;
