@@ -161,6 +161,10 @@
         <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Kirjautunut käyttäjä:</span>
         <span class="user-badge" id="current-user-badge"> Valtio (Pääkäyttäjä & Sijoittaja)</span>
       </div>
+      <div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Simulaation kuukausi (Firebase):</span>
+        <span class="user-badge" id="current-month-badge" style="color:#38bdf8;"> Kuukausi 1</span>
+      </div>
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button class="btn btn-sm btn-secondary" onclick="openLoginModal()">Vaihda Tiliä</button>
@@ -220,7 +224,7 @@
   <!-- TAB 3: YRITYSTEN TALOUS & ASETUKSET -->
   <div id="tab-company-mgmt" class="tab-content" style="display: none;">
     <div class="card">
-      <h2> Yritysten Tulot, Menot, Kuukausimaksut & Osingot</h2>
+      <h2> Yritysten Tulot, Menot, Manuaaliset Kuukausimaksut & Osingot</h2>
       <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
         Vain yritys itse sekä Valtio voivat muokata yrityksen talousarvoja ja osinkoasetuksia.
       </p>
@@ -266,31 +270,55 @@
       
       onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
-          window.state = docSnap.data();
+          const incomingData = docSnap.data();
+          const prevMonth = window.state ? window.state.currentMonth : null;
+          
+          if (!window.state) {
+            window.state = incomingData;
+          } else {
+            window.state.companies = incomingData.companies || window.state.companies;
+            window.state.citizens = incomingData.citizens || window.state.citizens;
+            window.state.stateBalance = incomingData.stateBalance ?? window.state.stateBalance;
+            window.state.subscriptions = incomingData.subscriptions || window.state.subscriptions;
+            window.state.currentMonth = incomingData.currentMonth ?? window.state.currentMonth;
+          }
+
           if (!window.state.portfolios) window.state.portfolios = {};
           if (!window.state.stocksData) window.state.stocksData = {};
           if (!window.state.historyStockPrices) window.state.historyStockPrices = {};
           if (!window.state.stockPriceModifiers) window.state.stockPriceModifiers = {};
           if (!window.state.marketListings) window.state.marketListings = [];
+          if (window.state.currentMonth === undefined) window.state.currentMonth = 1;
           
-          window.state.companies.forEach(comp => {
-            if (!window.state.stocksData[comp.id]) {
-              window.state.stocksData[comp.id] = {
-                sharesCount: 1000,
-                manualIncome: 5000,
-                manualExpense: 3000,
-                dividendType: 'amount',
-                dividendValue: 2.00,
-                useDividends: true
-              };
-            }
-            if (window.state.stockPriceModifiers[comp.id] === undefined) {
-              window.state.stockPriceModifiers[comp.id] = 0;
-            }
-            if (!window.state.historyStockPrices[comp.id]) {
-              window.state.historyStockPrices[comp.id] = [calculateStockPrice(comp.id)];
-            }
-          });
+          if (window.state.companies && Array.isArray(window.state.companies)) {
+            window.state.companies.forEach(comp => {
+              if (!window.state.stocksData[comp.id]) {
+                window.state.stocksData[comp.id] = {
+                  sharesCount: 1000,
+                  manualIncome: 5000,
+                  manualExpense: 3000,
+                  dividendType: 'amount',
+                  dividendValue: 2.00,
+                  useDividends: true,
+                  dividendFrequency: 'monthly'
+                };
+              } else if (!window.state.stocksData[comp.id].dividendFrequency) {
+                window.state.stocksData[comp.id].dividendFrequency = 'monthly';
+              }
+
+              if (window.state.stockPriceModifiers[comp.id] === undefined) {
+                window.state.stockPriceModifiers[comp.id] = 0;
+              }
+              if (!window.state.historyStockPrices[comp.id] || window.state.historyStockPrices[comp.id].length === 0) {
+                window.state.historyStockPrices[comp.id] = [calculateStockPrice(comp.id)];
+              }
+            });
+          }
+
+          // Jos Firebasesta tuleva kuukausi on eri kuin aikaisemmin muistissa ollut, suoritetaan kuukauden vaihdon osinkologiikka
+          if (prevMonth !== null && incomingData.currentMonth && incomingData.currentMonth > prevMonth) {
+            handleAutomaticMonthAdvance(incomingData.currentMonth);
+          }
 
           if (window.renderAllStockApp) {
             window.renderAllStockApp();
@@ -340,9 +368,13 @@ window.openLoginModal = function() {
   const select = document.getElementById('login-account-select');
   if (!select) return;
   let options = `<option value="state">Valtio (Pääkäyttäjä & Sijoittaja)</option><optgroup label="10 Kansalaista">`;
-  state.citizens.forEach(c => { options += `<option value="cit_${c.id}">Kansalainen #${c.id} - ${c.name}</option>`; });
+  if (state.citizens) {
+    state.citizens.forEach(c => { options += `<option value="cit_${c.id}">Kansalainen #${c.id} - ${c.name}</option>`; });
+  }
   options += `</optgroup><optgroup label="Yritykset">`;
-  state.companies.forEach(comp => { options += `<option value="comp_${comp.id}">Yritys: ${comp.name}</option>`; });
+  if (state.companies) {
+    state.companies.forEach(comp => { options += `<option value="comp_${comp.id}">Yritys: ${comp.name}</option>`; });
+  }
   options += `</optgroup>`;
   select.innerHTML = options;
   onLoginAccountSelectChange(select.value);
@@ -368,11 +400,11 @@ window.performLogin = function(e) {
     ok = (pass === (state.statePassword || 'admin123'));
   } else if (acc.startsWith('cit_')) {
     const id = Number(acc.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
+    const c = state.citizens ? state.citizens.find(x => x.id === id) : null;
     ok = (c && c.password === pass);
   } else if (acc.startsWith('comp_')) {
     const id = acc.replace('comp_', '');
-    const comp = state.companies.find(x => x.id === id);
+    const comp = state.companies ? state.companies.find(x => String(x.id) === String(id)) : null;
     ok = (comp && comp.password === pass);
   }
 
@@ -400,6 +432,9 @@ window.renderAllStockApp = function() {
 
 function updateUserDisplayBadge() {
   const badge = document.getElementById('current-user-badge');
+  const monthBadge = document.getElementById('current-month-badge');
+  if (monthBadge) monthBadge.textContent = ` Kuukausi ${state.currentMonth || 1}`;
+
   if (!badge) return;
   const userKey = state.currentUserKey || 'state';
   let txt = 'Valtio (Pääkäyttäjä)';
@@ -408,11 +443,11 @@ function updateUserDisplayBadge() {
     txt = 'Valtio (Pääkäyttäjä & Sijoittaja)';
   } else if (userKey.startsWith('cit_')) {
     const id = Number(userKey.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
+    const c = state.citizens ? state.citizens.find(x => x.id === id) : null;
     if (c) txt = `Kansalainen #${c.id}: ${c.name}`;
   } else if (userKey.startsWith('comp_')) {
     const id = userKey.replace('comp_', '');
-    const comp = state.companies.find(x => x.id === id);
+    const comp = state.companies ? state.companies.find(x => String(x.id) === String(id)) : null;
     if (comp) txt = `Yritys: ${comp.name}`;
   }
   badge.textContent = txt;
@@ -436,46 +471,25 @@ function getCompanyName(key) {
   if (key === 'state') return 'Valtio';
   if (key.startsWith('cit_')) {
     const id = Number(key.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
+    const c = state.citizens ? state.citizens.find(x => x.id === id) : null;
     return c ? `Kansalainen: ${c.name}` : key;
   }
   if (key.startsWith('comp_')) {
     const id = key.replace('comp_', '');
-    const comp = state.companies.find(x => x.id === id);
+    const comp = state.companies ? state.companies.find(x => String(x.id) === String(id)) : null;
     return comp ? `Yritys: ${comp.name}` : key;
   }
   return key;
 }
 
-function getCompanySubscriptionsTotal(compId) {
-  let subTotal = 0;
-  if (state.subscriptions && Array.isArray(state.subscriptions)) {
-    state.subscriptions.forEach(sub => {
-      // Käytetään tarkkaa string-vertailua (String(compId)), jotta ID-tyypit täsmäävät varmasti
-      const targetCompId = String(compId);
-      const receiverId = String(sub.receiver || '').replace(/^comp_/, '');
-      const payerId = String(sub.payer || '').replace(/^comp_/, '');
-
-      if (sub.receiver && receiverId === targetCompId) {
-        subTotal += Number(sub.amount || 0);
-      }
-      if (sub.payer && payerId === targetCompId) {
-        subTotal -= Number(sub.amount || 0);
-      }
-    });
-  }
-  return subTotal;
-}
-
 function calculateCompanyNetIncome(compId) {
   const sData = state.stocksData[compId] || { manualIncome: 0, manualExpense: 0 };
   let manualNet = Number(sData.manualIncome || 0) - Number(sData.manualExpense || 0);
-  let subNet = getCompanySubscriptionsTotal(compId);
-  return manualNet + subNet;
+  return manualNet;
 }
 
 function calculateStockPrice(compId) {
-  const comp = state.companies.find(x => x.id === compId);
+  const comp = state.companies ? state.companies.find(x => String(x.id) === String(compId)) : null;
   const sData = state.stocksData[compId] || { sharesCount: 1000 };
   if (!comp) return 10;
 
@@ -502,15 +516,13 @@ function getAvailableShares(compId) {
     });
   }
 
-  // Mukautetaan myös markkinoilla aktiivisesti myynnissä olevat erät (jos ne on vähennetty jo salkuista)
   let listedForSale = 0;
   if (state.marketListings && Array.isArray(state.marketListings)) {
     state.marketListings.forEach(l => {
-      if (l.compId === compId) listedForSale += Number(l.qty || 0);
+      if (String(l.compId) === String(compId)) listedForSale += Number(l.qty || 0);
     });
   }
 
-  // Osakkeita ei voi ikinä olla vapaana enempää kuin kokonaismäärä - omistetut osakkeet
   const totalAllocated = ownedByOthers + listedForSale;
   return Math.max(0, totalShares - totalAllocated);
 }
@@ -518,7 +530,7 @@ function getAvailableShares(compId) {
 /* PÖRSSILISTA JA KAUPANKÄYNTI */
 function renderStocksMarket() {
   const container = document.getElementById('stocks-market-list');
-  if (!container) return;
+  if (!container || !state.companies) return;
   container.innerHTML = '';
 
   if (!state.marketListings) state.marketListings = [];
@@ -529,13 +541,15 @@ function renderStocksMarket() {
     const prevPrice = history.length > 1 ? history[history.length - 2] : price;
     const isUp = price >= prevPrice;
 
-    const sData = state.stocksData[comp.id] || { sharesCount: 1000, useDividends: false };
+    const sData = state.stocksData[comp.id] || { sharesCount: 1000, useDividends: false, dividendFrequency: 'monthly' };
     const netInc = calculateCompanyNetIncome(comp.id);
     const availableFromCompany = getAvailableShares(comp.id);
 
-    let dividendText = sData.useDividends ? (sData.dividendType === 'percent' ? `${sData.dividendValue}% tuloksesta` : `${sData.dividendValue} € / osake`) : 'Ei käytössä';
+    let dividendText = sData.useDividends 
+      ? (sData.dividendType === 'percent' ? `${sData.dividendValue}% tuloksesta` : `${sData.dividendValue} € / osake`) + ` (${sData.dividendFrequency === 'yearly' ? 'Vuosittain' : 'Kuukausittain'})`
+      : 'Ei käytössä';
 
-    const compListings = state.marketListings.filter(l => l.compId === comp.id);
+    const compListings = state.marketListings.filter(l => String(l.compId) === String(comp.id));
     let listingsHtml = '';
 
     if (compListings.length > 0) {
@@ -566,7 +580,7 @@ function renderStocksMarket() {
           <span class="stats-badge ${isUp ? '' : 'negative'}">${price.toFixed(2)} € / osake</span>
         </div>
         <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
-          Kassa: ${Number(comp.balance).toFixed(2)} € | Kuukausitulos: ${netInc.toFixed(2)} €<br>
+          Kassa: ${Number(comp.balance).toFixed(2)} € | Netto tulot/menot: ${netInc.toFixed(2)} €<br>
           Osakkeita vapaana yhtiöltä: <strong style="color: ${availableFromCompany > 0 ? 'var(--success)' : 'var(--danger)'};">${availableFromCompany} / ${sData.sharesCount} kpl</strong><br>
           Osinko: ${dividendText}
         </div>
@@ -588,7 +602,6 @@ window.buyStock = function(compId) {
   if (qty <= 0) return;
 
   const available = getAvailableShares(compId);
-  // Tarkistus: Jos osakkeita on 0 tai pyyntö ylittää saatavilla olevat, ei voi ostaa
   if (available <= 0 || qty > available) {
     alert('Ei tarpeeksi vapaita osakkeita saatavilla yhtiöltä!');
     return;
@@ -619,7 +632,7 @@ window.buyStock = function(compId) {
 
 window.buyFromListing = function(compId, listingIndex) {
   const userKey = state.currentUserKey || 'state';
-  const compListings = state.marketListings.filter(l => l.compId === compId);
+  const compListings = state.marketListings.filter(l => String(l.compId) === String(compId));
   const listing = compListings[listingIndex];
   if (!listing) return;
 
@@ -705,7 +718,7 @@ function renderPortfolio() {
   let stocksHtml = '';
 
   Object.entries(userPort).forEach(([compId, qty]) => {
-    const comp = state.companies.find(x => x.id === compId);
+    const comp = state.companies ? state.companies.find(x => String(x.id) === String(compId)) : null;
     if (!comp || qty <= 0) return;
     const price = calculateStockPrice(compId);
     const val = price * qty;
@@ -735,10 +748,10 @@ function renderPortfolio() {
   listEl.innerHTML = stocksHtml || '<p style="font-size:0.85rem; color:var(--text-muted);">Ei osakeomistuksia.</p>';
 }
 
-/* YRITYSTEN TALOUS & ASETUKSET (VAIN VALTIO JA KYS. YRITYS VOIVAT MUOKATA) */
+/* YRITYSTEN TALOUS & ASETUKSET */
 function renderCompanyManagement() {
   const container = document.getElementById('company-management-list');
-  if (!container) return;
+  if (!container || !state.companies) return;
   container.innerHTML = '';
 
   const userKey = state.currentUserKey || 'state';
@@ -746,10 +759,9 @@ function renderCompanyManagement() {
 
   state.companies.forEach((comp, idx) => {
     if (!state.stocksData[comp.id]) {
-      state.stocksData[comp.id] = { sharesCount: 1000, manualIncome: 5000, manualExpense: 3000, dividendType: 'amount', dividendValue: 2.00, useDividends: true };
+      state.stocksData[comp.id] = { sharesCount: 1000, manualIncome: 5000, manualExpense: 3000, dividendType: 'amount', dividendValue: 2.00, useDividends: true, dividendFrequency: 'monthly' };
     }
     const sData = state.stocksData[comp.id];
-    const subTotal = getCompanySubscriptionsTotal(comp.id);
     const available = getAvailableShares(comp.id);
 
     const isOwnerCompany = (userKey === 'comp_' + comp.id);
@@ -762,16 +774,12 @@ function renderCompanyManagement() {
           <h3 style="color:#38bdf8; font-size:1rem;">${comp.name}</h3>
           ${!canEdit ? '<span style="font-size:0.75rem; color:var(--danger); background:rgba(239,68,68,0.1); padding:2px 8px; border-radius:4px;">🔒 Ei muokkausoikeutta</span>' : '<span style="font-size:0.75rem; color:var(--success); background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:4px;">✏️ Muokkausoikeus</span>'}
         </div>
-        <div style="background:#0f172a; padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);">Kuukausimaksut yhteensä (saapuvat / lähtevät):</span>
-          <strong style="color:${subTotal >= 0 ? 'var(--success)' : 'var(--danger)'};">${subTotal >= 0 ? '+' : ''}${subTotal.toFixed(2)} € / kk</strong>
-        </div>
         <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
           Osakkeet vapaana markkinoilla: <strong style="color:#f8fafc;">${available} / ${sData.sharesCount} kpl</strong>
         </div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
           <div class="form-group">
-            <label>Manuaaliset Tulot (€/kk):</label>
+            <label>Manuaaliset Tulot / Maksut (€/kk):</label>
             <input type="number" value="${sData.manualIncome}" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'manualIncome', this.value)">
           </div>
           <div class="form-group">
@@ -792,6 +800,13 @@ function renderCompanyManagement() {
           <div class="form-group">
             <label>Osingon arvo / määrä:</label>
             <input type="number" value="${sData.dividendValue}" step="0.1" ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendValue', this.value)">
+          </div>
+          <div class="form-group">
+            <label>Maksutiheys:</label>
+            <select ${disabledAttr} onchange="updateStockSetting('${comp.id}', 'dividendFrequency', this.value)">
+              <option value="monthly" ${sData.dividendFrequency === 'monthly' ? 'selected' : ''}>Kuukausittain</option>
+              <option value="yearly" ${sData.dividendFrequency === 'yearly' ? 'selected' : ''}>Vuosittain (Joka 12. kk)</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Osingonmaksu:</label>
@@ -820,23 +835,73 @@ window.updateStockSetting = function(compId, field, val) {
   if (!state.stocksData[compId]) state.stocksData[compId] = {};
   if (field === 'useDividends') {
     state.stocksData[compId][field] = (val === true);
-  } else if (field === 'dividendType') {
+  } else if (field === 'dividendType' || field === 'dividendFrequency') {
     state.stocksData[compId][field] = val;
   } else {
     state.stocksData[compId][field] = Number(val);
   }
+
   recordStockHistory(compId);
   window.saveStockState();
   renderAllStockApp();
 }
 
-/* VALTION ADMIN VAULT (Vain valtiolle/pääkäyttäjälle näkyvä salasanaosio) */
+/* AUTOMAATTINEN KUUKAUDEN ETENEMINEN JA OSINKOJEN MAKSULOGIIKKA FIREBASEN POHJALTA */
+function handleAutomaticMonthAdvance(newMonth) {
+  const isYearlyMonth = (newMonth % 12 === 0);
+
+  if (state.companies) {
+    state.companies.forEach(comp => {
+      const compId = comp.id;
+      const sData = state.stocksData[compId];
+      if (!sData) return;
+
+      // Päivitetään kuukausittain vaihtuva osinkoprosentti
+      if (sData.dividendType === 'percent') {
+        let variation = (Math.random() - 0.5) * 1.0;
+        let newVal = Math.max(0.5, Math.min(50, (Number(sData.dividendValue) || 5) + variation));
+        sData.dividendValue = Number(newVal.toFixed(1));
+      }
+
+      // Tarkistetaan maksetaanko osinko tässä kuussa
+      const shouldPay = sData.useDividends && (sData.dividendFrequency === 'monthly' || (sData.dividendFrequency === 'yearly' && isYearlyMonth));
+
+      if (shouldPay) {
+        const netIncome = calculateCompanyNetIncome(compId);
+        let dividendPerShare = 0;
+
+        if (sData.dividendType === 'amount') {
+          dividendPerShare = Number(sData.dividendValue) || 0;
+        } else if (sData.dividendType === 'percent') {
+          const totalDividendPool = Math.max(0, netIncome * ((Number(sData.dividendValue) || 0) / 100));
+          const totalShares = Number(sData.sharesCount) || 1000;
+          dividendPerShare = totalDividendPool / totalShares;
+        }
+
+        if (dividendPerShare > 0 && state.portfolios) {
+          Object.entries(state.portfolios).forEach(([holderKey, port]) => {
+            const ownedQty = port[compId] || 0;
+            if (ownedQty > 0) {
+              const payout = dividendPerShare * ownedQty;
+              adjustEntityBalance('comp_' + compId, -payout);
+              adjustEntityBalance(holderKey, payout);
+            }
+          });
+        }
+      }
+
+      recordStockHistory(compId);
+    });
+  }
+}
+
+/* VALTION ADMIN VAULT */
 function renderAdminVault() {
   const userKey = state.currentUserKey || 'state';
   if (userKey !== 'state') return;
 
   const citList = document.getElementById('admin-citizens-list');
-  if (citList) {
+  if (citList && state.citizens) {
     citList.innerHTML = '<h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Kansalaisten Tilit</h3>';
     state.citizens.forEach((c, idx) => {
       citList.innerHTML += `
@@ -849,7 +914,7 @@ function renderAdminVault() {
   }
 
   const compList = document.getElementById('admin-companies-list');
-  if (compList) {
+  if (compList && state.companies) {
     compList.innerHTML = '<h3 style="color:var(--text); font-size:0.95rem; margin-bottom:8px;">Yritysten Tilit</h3>';
     state.companies.forEach((comp, idx) => {
       compList.innerHTML += `
@@ -867,15 +932,15 @@ window.updateCompanyPwd = function(idx, val) { state.companies[idx].password = v
 
 /* APUPULSSI SALDOILLE */
 function getEntityBalance(key) {
-  if (key === 'state') return state.stateBalance;
+  if (key === 'state') return state.stateBalance || 0;
   if (key.startsWith('comp_')) {
     const compId = key.replace('comp_', '');
-    const comp = state.companies.find(x => String(x.id) === String(compId));
+    const comp = state.companies ? state.companies.find(x => String(x.id) === String(compId)) : null;
     return comp ? comp.balance : 0;
   }
   if (key.startsWith('cit_')) {
     const id = Number(key.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
+    const c = state.citizens ? state.citizens.find(x => x.id === id) : null;
     return c ? c.balance : 0;
   }
   return 0;
@@ -884,25 +949,25 @@ function getEntityBalance(key) {
 function adjustEntityBalance(key, amt) {
   const num = Number(amt) || 0;
   if (key === 'state') {
-    state.stateBalance += num;
+    state.stateBalance = (state.stateBalance || 0) + num;
   } else if (key.startsWith('comp_')) {
     const compId = key.replace('comp_', '');
-    const comp = state.companies.find(x => String(x.id) === String(compId));
+    const comp = state.companies ? state.companies.find(x => String(x.id) === String(compId)) : null;
     if (comp) comp.balance += num;
   } else if (key.startsWith('cit_')) {
     const id = Number(key.replace('cit_', ''));
-    const c = state.citizens.find(x => x.id === id);
+    const c = state.citizens ? state.citizens.find(x => x.id === id) : null;
     if (c) c.balance += num;
   }
 }
 
-/* KAAVIOIDEN HALLINTA (ITSE KOODATTU VIIVAKAAVIO) */
+/* KAAVIOIDEN HALLINTA */
 function updateChartDropdown() {
   const sel = document.getElementById('chart-company-select');
-  if (!sel) return;
+  if (!sel || !state.companies) return;
   const currentVal = sel.value;
   sel.innerHTML = state.companies.map(comp => `<option value="${comp.id}">${comp.name}</option>`).join('');
-  if (currentVal && state.companies.some(c => c.id === currentVal)) {
+  if (currentVal && state.companies.some(c => String(c.id) === String(currentVal))) {
     sel.value = currentVal;
   }
 }
@@ -966,9 +1031,11 @@ window.updateStockChart = function() {
   const historyArr = state.historyStockPrices[compId];
   const labels = historyArr.map((_, idx) => idx === 0 ? 'Alku' : `Päivitys ${idx}`);
 
+  const comp = state.companies ? state.companies.find(c => String(c.id) === String(compId)) : null;
+
   window.stockChart.data.labels = labels;
   window.stockChart.data.datasets[0].data = historyArr;
-  window.stockChart.data.datasets[0].label = `Osakkeen arvo (€) - ${state.companies.find(c => c.id === compId)?.name || ''}`;
+  window.stockChart.data.datasets[0].label = `Osakkeen arvo (€) - ${comp ? comp.name : ''}`;
   window.stockChart.update();
 }
 </script>
